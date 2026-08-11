@@ -1,7 +1,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="CHICAGO de ASOBO — シカゴのイベント情報を毎朝更新。今週・来週の予定と、誰が行くかを共有できます。">
-<meta name="theme-color" content="#1C4E80">
+<meta name="theme-color" content="#12283E">
 <title>CHICAGO de ASOBO</title>
 <style>
   /* ---------- tokens (light only — 白ベース固定) ---------- */
@@ -51,9 +51,19 @@
   .page { max-width: 1120px; margin: 0 auto; padding: 0 20px 64px; }
 
   /* ---------- masthead ---------- */
-  .masthead { padding: 28px 0 22px; position: relative; }
+  .masthead {
+    position: relative; margin: 0 -20px; padding: 28px 20px 26px;
+    background: linear-gradient(180deg, #12283E 0%, #1B3D5E 70%, #27567F 100%);
+  }
+  .masthead .eyebrow { color: #8FB0C9; }
+  .masthead h1 { color: #FFFFFF; }
+  .masthead h1 .de { color: #F0BE5C; }
+  .masthead .stat-strip, .masthead .legend, .masthead .me-bar {
+    border-color: rgba(255, 255, 255, .16);
+    box-shadow: 0 14px 34px rgba(8, 20, 33, .3);
+  }
   .masthead::before {
-    content: ""; position: absolute; top: 0; left: -20px; right: -20px; height: 5px;
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 5px;
     background: linear-gradient(90deg, var(--accent) 0 40%, var(--flag-red) 40% 44%, transparent 44% 56%, var(--flag-red) 56% 60%, var(--accent) 60% 100%);
   }
   .eyebrow-row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
@@ -74,7 +84,10 @@
 
   /* ---------- sections ---------- */
   .section-head { display: flex; align-items: baseline; gap: 10px; margin: 40px 0 14px; }
-  .section-head h2 { font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: .03em; font-size: 22px; margin: 0; }
+  .section-head h2 {
+    font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: .03em;
+    font-size: 22px; margin: 0; border-left: 4px solid var(--flag-red); padding-left: 11px;
+  }
   .section-head .range { font-family: var(--font-mono); font-size: 13px; color: var(--ink-faint); }
   .section-head::after { content: ""; flex: 1; height: 1px; background: var(--line); }
   .board-col { border: 1px solid var(--line); background: var(--surface); }
@@ -148,7 +161,8 @@
     flex: 0 0 258px; background: var(--surface); border: 1px solid var(--line);
     position: relative; padding: 16px 16px 14px; transition: background .14s ease;
   }
-  button.ticket:hover { background: var(--accent-soft); }
+  button.ticket { transition: transform .16s ease, box-shadow .16s ease, background .14s ease; }
+  button.ticket:hover { background: var(--accent-soft); transform: translateY(-2px); box-shadow: 0 10px 26px rgba(16, 23, 26, .1); }
   button.ticket::before, button.ticket::after {
     content: ""; position: absolute; width: 14px; height: 14px; border-radius: 50%;
     background: var(--bg); border: 1px solid var(--line); top: 50%; transform: translateY(-50%);
@@ -217,12 +231,17 @@
     border-bottom: 2px solid transparent;
   }
   .topnav a:hover { color: var(--accent); border-bottom-color: var(--line); }
+  .topnav a.is-active { color: var(--accent); border-bottom-color: var(--flag-red); }
   section, .map-wrap { scroll-margin-top: 54px; }
   .day-head { top: 42px; }
 
   /* ---------- spots ---------- */
   .spot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
-  .spot-card { border: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; }
+  .spot-card {
+    border: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column;
+    transition: transform .16s ease, box-shadow .16s ease;
+  }
+  .spot-card:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(16, 23, 26, .1); }
   .spot-main {
     appearance: none; border: none; background: none; font: inherit; color: inherit;
     text-align: left; cursor: pointer; padding: 14px 15px 10px; flex: 1;
@@ -376,17 +395,22 @@
   <header class="masthead">
     <div class="eyebrow-row">
       <span class="eyebrow">CHICAGO, IL</span>
-      <span class="eyebrow">最終更新 2026-08-11 (火)</span>
+      <span class="eyebrow" id="last-updated">最終更新 —</span>
     </div>
     <h1>CHICAGO <span class="de">de</span> ASOBO</h1>
 
     <svg class="skyline" viewBox="0 0 1000 132" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="シカゴのスカイライン">
       <defs>
         <linearGradient id="skyg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#25567F"/><stop offset="1" stop-color="#1C4E80"/>
+          <stop offset="0" stop-color="#0D1F31"/><stop offset="1" stop-color="#0A1A2A"/>
         </linearGradient>
       </defs>
-      <g fill="#C3D4E2">
+      <g fill="#FFFFFF" opacity=".4">
+        <circle cx="60" cy="26" r="1.6"/><circle cx="128" cy="14" r="1.2"/><circle cx="300" cy="8" r="1.4"/>
+        <circle cx="560" cy="18" r="1.2"/><circle cx="700" cy="10" r="1.6"/><circle cx="850" cy="22" r="1.2"/>
+        <circle cx="960" cy="12" r="1.4"/><circle cx="420" cy="6" r="1.2"/>
+      </g>
+      <g fill="#33546F">
         <rect x="18" y="86" width="34" height="46"/><rect x="58" y="70" width="26" height="62"/>
         <rect x="640" y="78" width="30" height="54"/><rect x="676" y="92" width="24" height="40"/>
         <rect x="900" y="74" width="30" height="58"/><rect x="936" y="88" width="26" height="44"/>
@@ -417,7 +441,7 @@
         <rect x="852" y="84" width="34" height="48"/>
       </g>
       <!-- 窓 -->
-      <g fill="#FFFFFF" opacity=".28">
+      <g fill="#F5C86B" opacity=".85">
         <rect x="156" y="44" width="8" height="6"/><rect x="156" y="60" width="8" height="6"/><rect x="156" y="76" width="8" height="6"/>
         <rect x="178" y="30" width="8" height="6"/><rect x="178" y="46" width="8" height="6"/><rect x="178" y="62" width="8" height="6"/><rect x="178" y="78" width="8" height="6"/>
         <rect x="200" y="44" width="8" height="6"/><rect x="200" y="60" width="8" height="6"/><rect x="200" y="76" width="8" height="6"/>
@@ -427,14 +451,14 @@
         <rect x="292" y="66" width="14" height="6"/><rect x="292" y="84" width="14" height="6"/><rect x="292" y="102" width="14" height="6"/>
         <rect x="556" y="70" width="12" height="6"/><rect x="556" y="88" width="12" height="6"/><rect x="556" y="106" width="12" height="6"/>
       </g>
-      <rect y="130" width="1000" height="2" fill="var(--line)"/>
+      <rect y="130" width="1000" height="2" fill="rgba(255,255,255,.28)"/>
     </svg>
 
     <div class="stat-strip">
       <div class="stat" style="flex:1 1 210px" id="wx-box">
         <div class="wx-now"><span class="wx-desc">天気を読み込み中…</span></div>
       </div>
-      <div class="stat"><span class="stat-num" id="n-week">—</span><span class="stat-label">今週 (〜8/16)</span></div>
+      <div class="stat"><span class="stat-num" id="n-week">—</span><span class="stat-label" id="label-week">今週</span></div>
       <div class="stat"><span class="stat-num" id="n-next">—</span><span class="stat-label">来週の目玉</span></div>
       <div class="stat"><span class="stat-num" id="n-now">—</span><span class="stat-label">開催中</span></div>
       <div class="stat"><span class="stat-num" id="n-trip">—</span><span class="stat-label">週末旅行</span></div>
@@ -500,12 +524,12 @@
   <div class="board-col" id="search-results" hidden></div>
 
   <section aria-labelledby="week-head" id="sec-week">
-    <div class="section-head"><h2 id="week-head">今週のイベント</h2><span class="range">TUE AUG 11 – SUN AUG 16, 2026</span></div>
+    <div class="section-head"><h2 id="week-head">今週のイベント</h2><span class="range" id="range-week"></span></div>
     <div class="board-col" id="week-list"></div>
   </section>
 
   <section aria-labelledby="next-head" id="sec-next">
-    <div class="section-head"><h2 id="next-head">来週の目玉</h2><span class="range">MON AUG 17 – SUN AUG 23, 2026</span></div>
+    <div class="section-head"><h2 id="next-head">来週の目玉</h2><span class="range" id="range-next"></span></div>
     <div class="board-col" id="next-list"></div>
   </section>
 
@@ -692,7 +716,8 @@ async function boot() {
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
   });
   if (!res.ok) throw new Error("events " + res.status);
-  bucket(await res.json());
+  const rows = await res.json();
+  bucket(rows);
 
 const esc = (s) => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const STORE = [];
@@ -770,6 +795,41 @@ const weekStart = chicagoToday();
 const nextStart = new Date(weekStart); nextStart.setDate(nextStart.getDate() + (7 - weekStart.getDay()) % 7 + 1);
 const nextEnd = new Date(nextStart); nextEnd.setDate(nextEnd.getDate() + 6);
 const NEXT = UPCOMING.filter(e => e.date <= iso(nextEnd) && (e.dateEnd || e.date) >= iso(nextStart));
+
+/* ---------- 日付表示（データと今日から自動計算） ---------- */
+{
+  const MONS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  const fmt = (d) => `${DOWS[d.getDay()]} ${MONS[d.getMonth()]} ${d.getDate()}`;
+  const sunday = new Date(nextStart); sunday.setDate(sunday.getDate() - 1);
+  document.getElementById("range-week").textContent = `${fmt(weekStart)} – ${fmt(sunday)}, ${weekStart.getFullYear()}`;
+  document.getElementById("range-next").textContent = `${fmt(nextStart)} – ${fmt(nextEnd)}, ${nextEnd.getFullYear()}`;
+  document.getElementById("label-week").textContent = `今週 (〜${sunday.getMonth() + 1}/${sunday.getDate()})`;
+  const latest = rows.reduce((m, r) => r.updated_at > m ? r.updated_at : m, "");
+  if (latest) {
+    const d = new Date(latest);
+    const ymd = d.toLocaleDateString("ja-JP", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-");
+    const dow = d.toLocaleDateString("ja-JP", { timeZone: "America/Chicago", weekday: "short" });
+    document.getElementById("last-updated").textContent = `最終更新 ${ymd} (${dow})`;
+  }
+}
+
+/* ---------- ナビの現在地ハイライト ---------- */
+{
+  const SPY_IDS = ["sec-map","sec-week","sec-next","sec-cal","sec-now","sec-spots","sec-japan","sec-trips"]; // 文書順
+  const links = [...document.querySelectorAll(".topnav a")];
+  function updateSpy() {
+    const y = scrollY + 130;
+    let cur = null;
+    for (const id of SPY_IDS) {
+      const el = document.getElementById(id);
+      if (el && el.getBoundingClientRect().top + scrollY <= y) cur = id;
+    }
+    if (scrollY + innerHeight >= document.body.scrollHeight - 5) cur = SPY_IDS[SPY_IDS.length - 1];
+    links.forEach(x => x.classList.toggle("is-active", x.getAttribute("href") === "#" + cur));
+  }
+  addEventListener("scroll", updateSpy, { passive: true });
+  updateSpy();
+}
 mount(document.getElementById("next-list"), NEXT, rowHTML);
 mount(document.getElementById("now-list"), NOW, rowHTML);
 mount(document.getElementById("trip-list"), TRIPS, ticketHTML);
