@@ -201,6 +201,40 @@
   .btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
   .me-hint { font-size: 12.5px; color: var(--ink-faint); }
 
+  /* ---------- top nav ---------- */
+  html { scroll-behavior: smooth; }
+  .topnav {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; gap: 2px; align-items: center;
+    background: var(--surface); border-bottom: 1px solid var(--line);
+    margin: 0 -20px; padding: 0 12px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .topnav::-webkit-scrollbar { display: none; }
+  .topnav a {
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em;
+    color: var(--ink-soft); text-decoration: none; padding: 12px 10px; white-space: nowrap;
+    border-bottom: 2px solid transparent;
+  }
+  .topnav a:hover { color: var(--accent); border-bottom-color: var(--line); }
+  section, .map-wrap { scroll-margin-top: 54px; }
+  .day-head { top: 42px; }
+
+  /* ---------- spots ---------- */
+  .spot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+  .spot-card { border: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; }
+  .spot-main {
+    appearance: none; border: none; background: none; font: inherit; color: inherit;
+    text-align: left; cursor: pointer; padding: 14px 15px 10px; flex: 1;
+  }
+  .spot-main:hover { background: var(--accent-soft); }
+  .spot-main .chips { margin-bottom: 6px; }
+  .spot-main h3 { font-family: var(--font-display); font-size: 17px; font-weight: 700; margin: 0 0 3px; }
+  .spot-main .s-what { font-size: 13px; color: var(--ink-soft); display: block; line-height: 1.45; }
+  .spot-main .s-line { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); display: block; margin-top: 8px; }
+  .spot-card .rsvp-bar { padding: 0 15px 12px; border-top: 1px dashed var(--line-soft); padding-top: 9px; }
+  .c-japan { --cat: #A0355A; --cat-bg: #F6EAEF; }
+
   /* ---------- weather ---------- */
   .wx-now { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .wx-icon { width: 34px; height: 34px; flex-shrink: 0; }
@@ -297,6 +331,17 @@
   }
   .chip-btn:hover { border-color: var(--accent); color: var(--accent); }
   .chip-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .f-search {
+    font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--surface);
+    padding: 5px 11px; min-width: 170px; color: var(--ink);
+  }
+  .f-search:focus { outline: none; border-color: var(--accent); }
+  #search-results { margin-top: 12px; }
+  .sr-head { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; color: var(--ink-faint); padding: 8px 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+  .sr-item { appearance: none; border: none; background: none; font: inherit; color: inherit; display: block; width: 100%; text-align: left; cursor: pointer; padding: 9px 14px; border-bottom: 1px solid var(--line-soft); font-size: 14px; }
+  .sr-item:last-child { border-bottom: none; }
+  .sr-item:hover { background: var(--accent-soft); }
+  .sr-item .sr-t { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); margin-right: 8px; }
   .empty-day { padding: 16px; font-size: 13.5px; color: var(--ink-faint); }
 
   /* ---------- rsvp ---------- */
@@ -409,10 +454,25 @@
       <span class="me-name" id="me-name">—</span>
       <button class="btn" type="button" id="me-edit">名前を変える</button>
       <span class="me-hint" id="me-hint"></span>
+      <span style="margin-left:auto;display:flex;gap:8px">
+        <a class="btn" href="https://line.me/R/share?text=CHICAGO%20de%20ASOBO%20%E2%80%94%20%E3%82%B7%E3%82%AB%E3%82%B4%E3%81%AE%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%82%92%E6%97%A5%E6%9C%AC%E8%AA%9E%E3%81%A7%20https%3A%2F%2Fchicago-dashboard.vercel.app%2F" target="_blank" rel="noopener" style="text-decoration:none">LINEで共有</a>
+        <button class="btn" type="button" id="copy-link">リンクをコピー</button>
+      </span>
     </div>
   </header>
 
-  <div class="map-wrap">
+  <nav class="topnav" aria-label="ページ内ナビゲーション">
+    <a href="#sec-week">今週</a>
+    <a href="#sec-next">来週の目玉</a>
+    <a href="#sec-cal">カレンダー</a>
+    <a href="#sec-map">マップ</a>
+    <a href="#sec-now">開催中</a>
+    <a href="#sec-spots">定番スポット</a>
+    <a href="#sec-japan">日本を感じる</a>
+    <a href="#sec-trips">週末旅行</a>
+  </nav>
+
+  <div class="map-wrap" id="sec-map">
     <div class="map-pane" id="map-pane"></div>
     <div class="map-side">
       <h3>会場マップ</h3>
@@ -435,30 +495,42 @@
     <button class="chip-btn" type="button" data-f="cat:sports" aria-pressed="false">スポーツ</button>
     <button class="chip-btn" type="button" data-f="cat:air" aria-pressed="false">野外</button>
     <button class="chip-btn" type="button" id="f-clear">解除</button>
+    <input class="f-search" id="f-search" type="search" placeholder="イベント・スポットを検索">
   </div>
+  <div class="board-col" id="search-results" hidden></div>
 
-  <section aria-labelledby="week-head">
+  <section aria-labelledby="week-head" id="sec-week">
     <div class="section-head"><h2 id="week-head">今週のイベント</h2><span class="range">TUE AUG 11 – SUN AUG 16, 2026</span></div>
     <div class="board-col" id="week-list"></div>
   </section>
 
-  <section aria-labelledby="next-head">
+  <section aria-labelledby="next-head" id="sec-next">
     <div class="section-head"><h2 id="next-head">来週の目玉</h2><span class="range">MON AUG 17 – SUN AUG 23, 2026</span></div>
     <div class="board-col" id="next-list"></div>
   </section>
 
-  <section aria-labelledby="cal-head">
+  <section aria-labelledby="cal-head" id="sec-cal">
     <div class="section-head"><h2 id="cal-head">カレンダー</h2><span class="range">日付を押すと、その日の予定が出ます</span></div>
     <div class="cal-months" id="cal-months"></div>
     <div class="board-col" id="cal-day-list" hidden></div>
   </section>
 
-  <section aria-labelledby="now-head">
+  <section aria-labelledby="now-head" id="sec-now">
     <div class="section-head"><h2 id="now-head">開催中</h2><span class="range">シーズン中いつでも行けるもの</span></div>
     <div class="board-col" id="now-list"></div>
   </section>
 
-  <section aria-labelledby="trip-head">
+    <section aria-labelledby="spots-head" id="sec-spots">
+    <div class="section-head"><h2 id="spots-head">定番スポット</h2><span class="range">シカゴで一度はやること。「行った！」でみんなの制覇状況を共有</span></div>
+    <div class="spot-grid" id="spot-list"></div>
+  </section>
+
+  <section aria-labelledby="japan-head" id="sec-japan">
+    <div class="section-head"><h2 id="japan-head">日本を感じるシカゴ</h2><span class="range">日系スーパー・日本庭園など、恋しくなったら</span></div>
+    <div class="spot-grid" id="japan-list"></div>
+  </section>
+
+<section aria-labelledby="trip-head" id="sec-trips">
     <div class="section-head"><h2 id="trip-head">週末小旅行</h2><span class="range">シカゴから車で行ける範囲</span></div>
     <div class="trips" id="trip-list"></div>
   </section>
@@ -510,8 +582,9 @@ const ICON = {
 };
 const CAT = {
   sports: "スポーツ", music: "音楽", art: "アート", food: "フード",
-  dance: "ダンス", air: "野外", nature: "自然", town: "町歩き"
+  dance: "ダンス", air: "野外", nature: "自然", town: "町歩き", japan: "日本"
 };
+ICON.japan = '<path d="M2.5 4.6q5.5-1.6 11 0M3.2 7.6h9.6M4.8 4.9 5.3 14M11.2 4.9 10.7 14M8 7.6V14" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>';
 const catHTML = (k) => `<span class="cat c-${k}"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">${ICON[k]}</svg>${CAT[k]}</span>`;
 const pickHTML = '<span class="pick"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1l2 4.6 5 .4-3.8 3.3 1.2 4.9L8 11.6 3.6 14.2l1.2-4.9L1 6l5-.4z"/></svg>目玉</span>';
 
@@ -545,7 +618,7 @@ const CONFIGURED = !SUPABASE_URL.startsWith("__");
 
 /* ---------- data（Supabase から取得） ---------- */
 const YEAR = chicagoToday().getFullYear();
-let WEEK = [], UPCOMING = [], NOW = [], TRIPS = [];
+let WEEK = [], UPCOMING = [], NOW = [], TRIPS = [], SPOTS = [];
 
 const pad = (n) => String(n).padStart(2, "0");
 const isoOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -610,6 +683,7 @@ function bucket(rows) {
   UPCOMING.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
   NOW = rows.filter(r => r.kind === "ongoing").map(fromRow);
   TRIPS = rows.filter(r => r.kind === "trip").map(fromRow);
+  SPOTS = rows.filter(r => r.kind === "spot").map(fromRow);
 }
 
 /* ---------- render ---------- */
@@ -699,6 +773,23 @@ const NEXT = UPCOMING.filter(e => e.date <= iso(nextEnd) && (e.dateEnd || e.date
 mount(document.getElementById("next-list"), NEXT, rowHTML);
 mount(document.getElementById("now-list"), NOW, rowHTML);
 mount(document.getElementById("trip-list"), TRIPS, ticketHTML);
+
+function spotHTML(e, i) {
+  return `<div class="spot-card" data-id="${esc(e.id)}">
+  <button class="spot-main" type="button" data-i="${i}" aria-haspopup="dialog">
+    <span class="chips">${catHTML(e.cat)}</span>
+    <h3>${esc(e.ja)}</h3>
+    <span class="s-what">${esc(e.what)}</span>
+    <span class="s-line">${esc(e.time)}｜${esc(e.price)}</span>
+  </button>
+  <div class="rsvp-bar">
+    <button class="go-btn" type="button" data-go="${esc(e.id)}" data-verb="行った！" aria-pressed="false" disabled>行った！</button>
+    <div class="goers" data-goers="${esc(e.id)}"></div>
+  </div>
+</div>`;
+}
+mount(document.getElementById("spot-list"), SPOTS.filter(e => e.cat !== "japan"), spotHTML);
+mount(document.getElementById("japan-list"), SPOTS.filter(e => e.cat === "japan"), spotHTML);
 
 /* counts */
 document.getElementById("n-week").textContent = WEEK.reduce((a, d) => a + d.items.length, 0);
@@ -795,7 +886,7 @@ function open(i) {
 }
 document.addEventListener("click", (ev) => {
   if (ev.target.closest("[data-go]")) return;
-  const btn = ev.target.closest("button.row, button.ticket");
+  const btn = ev.target.closest("button.row, button.ticket, button.spot-main");
   if (btn) { open(Number(btn.dataset.i)); return; }
   if (ev.target.closest(".d-close")) { dlg.close(); return; }
   if (ev.target === dlg) dlg.close();
@@ -890,7 +981,8 @@ function renderGoers() {
       btn.disabled = !CONFIGURED;
       const mine = myName && names.includes(myName);
       btn.setAttribute("aria-pressed", mine ? "true" : "false");
-      btn.textContent = mine ? "行く（取消）" : "行く";
+      const verb = btn.dataset.verb || "行く";
+      btn.textContent = mine ? verb.replace(/！$/, "") + "（取消）" : verb;
     }
     if (!CONFIGURED) { box.innerHTML = '<span class="goers-none">（接続待ち）</span>'; return; }
     box.innerHTML = names.map(n => `<span class="goer${n === myName ? " is-me" : ""}">${esc(n)}</span>`).join("");
@@ -907,8 +999,21 @@ document.addEventListener("click", (ev) => {
 const active = new Set();
 function applyFilters() {
   const cats = [...active].filter(f => f.startsWith("cat:")).map(f => f.slice(4));
+  const q = (document.getElementById("f-search")?.value || "").trim().toLowerCase();
+  const sr = document.getElementById("search-results");
+  if (q) {
+    const hits = STORE.map((e, i) => ({ e, i }))
+      .filter(({ e }) => `${e.ja} ${e.en} ${e.what} ${e.venue}`.toLowerCase().includes(q))
+      .slice(0, 20);
+    sr.innerHTML = `<div class="sr-head">検索結果 ${hits.length}件（すべての期間・スポットから）</div>` +
+      (hits.length ? hits.map(({ e, i }) =>
+        `<button class="sr-item" type="button" data-open="${i}"><span class="sr-t">${esc(e.date || e.time || "")}</span>${esc(e.ja)}</button>`
+      ).join("") : '<div class="empty-day">見つかりませんでした。</div>');
+    sr.hidden = false;
+  } else { sr.hidden = true; }
   document.querySelectorAll(".row-wrap").forEach(w => {
     let show = true;
+    if (q && !w.textContent.toLowerCase().includes(q)) show = false;
     if (active.has("free") && w.dataset.free !== "1") show = false;
     if (active.has("going") && !(rsvps[w.dataset.id] || []).length) show = false;
     if (cats.length && !cats.includes(w.dataset.cat)) show = false;
@@ -932,6 +1037,7 @@ function applyFilters() {
     } else if (msg) msg.remove();
   });
 }
+document.getElementById("f-search").addEventListener("input", applyFilters);
 document.getElementById("filters").addEventListener("click", (ev) => {
   const b = ev.target.closest(".chip-btn");
   if (!b) return;
@@ -1181,7 +1287,15 @@ async function loadWeather() {
   /* 屋外イベントの詳細に、雨の可能性が高い日は注意を出す */
   window.__wxByDate = fc;
 }
-  loadWeather();
+  document.getElementById("copy-link").addEventListener("click", async (ev) => {
+  const url = "https://chicago-dashboard.vercel.app/";
+  const b = ev.currentTarget;
+  try { await navigator.clipboard.writeText(url); b.textContent = "コピーしました ✓"; }
+  catch { prompt("このURLをコピーしてください", url); }
+  setTimeout(() => { b.textContent = "リンクをコピー"; }, 2000);
+});
+
+loadWeather();
   loadRsvps();
 }
 
