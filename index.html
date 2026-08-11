@@ -196,11 +196,14 @@
   .me-hint { font-size: 12.5px; color: var(--ink-faint); }
 
   /* ---------- map ---------- */
-  .map-wrap { display: grid; grid-template-columns: 340px 1fr; gap: 0; border: 1px solid var(--line); background: var(--surface); margin-top: 26px; }
+  .map-wrap { display: grid; grid-template-columns: 340px 1fr; gap: 0; border: 1px solid var(--line); background: var(--surface); margin-top: 26px; align-items: stretch; }
+  .map-side .place-list { flex: 1; }
   @media (max-width: 780px) { .map-wrap { grid-template-columns: 1fr; } }
-  .map-pane { position: relative; background: linear-gradient(170deg, #F2F6F8 0%, #E8EFF3 100%); border-right: 1px solid var(--line); }
-  @media (max-width: 780px) { .map-pane { border-right: none; border-bottom: 1px solid var(--line); } }
-  .map-pane svg { display: block; width: 100%; height: auto; }
+  .map-pane { position: relative; min-height: 460px; background: linear-gradient(170deg, #F2F6F8 0%, #E8EFF3 100%); border-right: 1px solid var(--line); }
+  @media (max-width: 780px) {
+    .map-pane { border-right: none; border-bottom: 1px solid var(--line); min-height: 0; aspect-ratio: 300 / 430; }
+  }
+  .map-pane svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
   .pin { cursor: pointer; }
   .pin-dot { transition: r .15s ease, fill .15s ease; }
   .pin:hover .pin-dot, .pin.is-active .pin-dot { fill: var(--flag-red); }
@@ -221,11 +224,44 @@
   .place-row.is-suburb .place-num { background: var(--ink-faint); }
   .place-ja { font-size: 13.5px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .place-cnt { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); flex-shrink: 0; }
-  .map-events { border-top: 1px solid var(--line); padding-top: 12px; }
-  .map-events h4 { font-family: var(--font-display); font-size: 14px; margin: 0 0 8px; }
-  .map-ev { appearance: none; background: none; border: none; font: inherit; text-align: left; cursor: pointer; display: block; width: 100%; padding: 5px 0; font-size: 13.5px; color: var(--accent); }
-  .map-ev:hover { text-decoration: underline; }
-  .map-ev .mev-t { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); margin-right: 7px; }
+  .map-events { border: 1px solid var(--line); border-top: none; background: var(--surface-2); padding: 14px 18px 16px; }
+  .map-events h4 { font-family: var(--font-display); font-size: 15px; margin: 0 0 10px; letter-spacing: .02em; }
+  .map-ev-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .map-ev {
+    appearance: none; border: 1px solid var(--line); background: var(--surface); font: inherit;
+    text-align: left; cursor: pointer; padding: 7px 12px; font-size: 13.5px; color: var(--ink);
+  }
+  .map-ev:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .map-ev .mev-t { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); margin-right: 8px; }
+
+  /* ---------- calendar ---------- */
+  .cal-months { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px) { .cal-months { grid-template-columns: 1fr; } }
+  .cal-m { border: 1px solid var(--line); background: var(--surface); padding: 14px 14px 16px; }
+  .cal-m h3 { font-family: var(--font-display); font-size: 16px; text-transform: uppercase; letter-spacing: .07em; margin: 0 0 12px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-dow { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); text-align: center; padding-bottom: 5px; letter-spacing: .05em; }
+  .cal-dow.is-sun { color: var(--flag-red); }
+  .cal-cell { aspect-ratio: 1; }
+  .cal-d {
+    appearance: none; border: 1px solid transparent; background: none; font: inherit; cursor: default;
+    width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums;
+  }
+  .cal-d.has-ev { cursor: pointer; color: var(--ink); background: var(--accent-soft); border-color: #D3E2EE; font-weight: 600; }
+  .cal-d.has-ev:hover { border-color: var(--accent); }
+  .cal-d.is-today { outline: 2px solid var(--flag-red); outline-offset: -2px; }
+  .cal-d[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .cal-d[aria-pressed="true"] .cal-dots i { background: #fff; }
+  .cal-dots { display: flex; gap: 2px; height: 4px; }
+  .cal-dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); display: block; }
+  .cal-selected-head {
+    display: flex; align-items: baseline; gap: 10px; padding: 10px 16px;
+    background: var(--surface-2); border-bottom: 1px solid var(--line);
+  }
+  .cal-selected-head .d1 { font-family: var(--font-display); font-size: 17px; font-weight: 800; }
+  .cal-selected-head .d2 { font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint); }
+  #cal-day-list { margin-top: 16px; }
 
   /* ---------- filters ---------- */
   .filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 26px 0 -4px; }
@@ -304,11 +340,11 @@
       <h3>会場マップ</h3>
       <p class="map-help">番号を押すと、その場所のイベントが下に出ます。</p>
       <div class="place-list" id="place-list"></div>
-      <div class="map-events" id="map-events" hidden>
-        <h4 id="map-ev-title"></h4>
-        <div id="map-ev-list"></div>
-      </div>
     </div>
+  </div>
+  <div class="map-events" id="map-events" hidden>
+    <h4 id="map-ev-title"></h4>
+    <div class="map-ev-list" id="map-ev-list"></div>
   </div>
 
   <div class="filters" id="filters">
@@ -331,6 +367,12 @@
   <section aria-labelledby="next-head">
     <div class="section-head"><h2 id="next-head">来週の目玉</h2><span class="range">MON AUG 17 – SUN AUG 23, 2026</span></div>
     <div class="board-col" id="next-list"></div>
+  </section>
+
+  <section aria-labelledby="cal-head">
+    <div class="section-head"><h2 id="cal-head">カレンダー</h2><span class="range">日付を押すと、その日の予定が出ます</span></div>
+    <div class="cal-months" id="cal-months"></div>
+    <div class="board-col" id="cal-day-list" hidden></div>
   </section>
 
   <section aria-labelledby="now-head">
@@ -565,41 +607,103 @@ const WEEK = [
   ]}
 ];
 
-const NEXT = [
-  { place:"wrigley", id:"next-crosstown-classic", resv:"buy", art:"baseball", cat:"sports", time:"8/17–19", ja:"クロスタウン・クラシック（カブス vs ホワイトソックス）", en:"Crosstown Classic — Cubs vs White Sox at Wrigley Field", pick:true,
+/* 来週以降〜次の月末まで。date / dateEnd は YYYY-MM-DD */
+const UPCOMING = [
+  { place:"wrigley", id:"up-crosstown-classic", resv:"buy", art:"baseball", cat:"sports", date:"2026-08-17", dateEnd:"2026-08-19", pick:true,
+    time:"8/17–19", ja:"クロスタウン・クラシック（カブス vs ホワイトソックス）", en:"Crosstown Classic — Cubs vs White Sox at Wrigley Field",
     what:"シカゴ2球団の直接対決。今季の最終シリーズ", venue:"Wrigley Field · 1060 W Addison St", price:"変動大", dur:"約3時間",
     lead:"シカゴの2つのMLB球団、ノースサイドのカブスとサウスサイドのホワイトソックスが年に数回だけ戦う「クロスタウン・クラシック」。今季後半戦は名物球場リグレー・フィールドで3連戦。通算成績はカブスの78勝77敗とほぼ互角で、街が二分される一週間になる。",
     meta:{ "日時":"8/17(月) 19:05 ／ 8/18(火) 19:05 ／ 8/19(水) 13:20", "場所":"Wrigley Field（1914年開場、MLBで2番目に古い球場）", "料金":"通常のカブス戦より高騰しやすい。早めの確保推奨", "行き方":"CTA Red Line「Addison」駅すぐ" },
     tips:"1914年開場のリグレー・フィールドは、ツタに覆われた外野フェンスと手動スコアボードで有名な、それ自体が観光地の球場。シカゴにいるうちに一度は行く価値がある。この対決は特に盛り上がるので、球場の雰囲気を味わうには最高の機会。水曜はデーゲームなので日中の観戦になる。",
     link:"https://www.mlb.com/cubs/schedule" },
 
-  { place:"millennium", id:"next-millennium-park-summer-film-series", resv:"free", art:"cinema", cat:"art", time:"8/18 (火)", ja:"野外映画『Sinners』", en:"Millennium Park Summer Film Series — Sinners",
+  { place:"millennium", id:"up-film-sinners", resv:"free", art:"cinema", cat:"art", date:"2026-08-18",
+    time:"8/18 (火)", ja:"野外映画『Sinners』", en:"Millennium Park Summer Film Series — Sinners",
     what:"無料野外上映シリーズの今季最終回", venue:"Jay Pritzker Pavilion, Millennium Park", price:"無料", dur:"約2時間",
     lead:"ミレニアム・パークの無料野外映画シリーズ、今季の最終回。2025年の話題作『Sinners』を、摩天楼を背景にした芝生の上で観る。",
     meta:{ "日時":"8/18 (火) 18:30 開始 ※今季最終回", "場所":"Jay Pritzker Pavilion, Millennium Park", "料金":"無料・予約不要", "行き方":"CTA Red/Blue Line「Monroe」「Washington」" },
     tips:"シリーズ最終回なので例年より混む可能性が高い。食べ物・飲み物の持ち込みが可能なので、ダウンタウンで買って早めに場所を確保するのがおすすめ。日没後は湖からの風で冷えるので羽織るものを。",
     link:"https://www.chicago.gov/city/en/depts/dca/supp_info/millennium_park_film_series.html" },
 
-  { place:"ravinia", id:"next-ravinia-festival", resv:"buy", art:"ravinia", cat:"music", time:"8/20 (木)", ja:"Ravinia: リッキー・マーティン", en:"Ravinia Festival — Ricky Martin",
+  { place:"ravinia", id:"up-ravinia-ricky-martin", resv:"buy", art:"ravinia", cat:"music", date:"2026-08-20",
+    time:"8/20 (木)", ja:"Ravinia: リッキー・マーティン", en:"Ravinia Festival — Ricky Martin",
     what:"ラテンポップの世界的スター。野外ピクニック鑑賞", venue:"Ravinia Festival · Highland Park（北郊）", price:"芝生 $110前後", dur:"約3時間 + 移動",
     lead:"「Livin' la Vida Loca」で世界的にブレイクしたプエルトリコ出身のラテンポップ・スター。ラヴィニアの芝生でピクニックしながら聴くには、これ以上ないくらい相性のいい夏向きのラインナップ。",
     meta:{ "日時":"8/20 (木) 夜公演", "場所":"Ravinia Festival, Highland Park", "料金":"芝生席 $110前後。公演1週間前に値上がりすることがある", "行き方":"Metra Union Pacific North線「Ravinia Park」駅（公演日のみ停車）" },
-    tips:"人気公演なので芝生席も早めに押さえたい。値上がり前（公演1週間前まで）に買うのが得策なので、行くなら今週中に決めるのがいい。ブランケット・ローチェア・虫除けを持参。",
+    tips:"人気公演なので芝生席も早めに押さえたい。値上がり前（公演1週間前まで）に買うのが得策なので、行くなら早めに決めるのがいい。ブランケット・ローチェア・虫除けを持参。",
     link:"https://www.ravinia.org/events" },
 
-  { place:"southport", id:"next-lakeview-taco-fest", resv:"free", art:"sangria", cat:"food", time:"8/21–23", ja:"レイクビュー・タコフェス", en:"Lakeview Taco Fest",
+  { place:"southport", id:"up-lakeview-taco-fest", resv:"free", art:"sangria", cat:"food", date:"2026-08-21", dateEnd:"2026-08-23",
+    time:"8/21–23", ja:"レイクビュー・タコフェス", en:"Lakeview Taco Fest",
     what:"タコス食べ比べ＋ルチャリブレ。13回目", venue:"3500 N Southport Ave（Southport Corridor）", price:"無料（寄付制）", dur:"2〜3時間",
     lead:"シカゴの人気店10軒以上が「最高のタコス」を競う3日間のフードフェス。ビールとタコスのペアリング、2つの音楽ステージ、そしてルチャリブレ（メキシカンプロレス）の実演まである。今年で13回目。",
     meta:{ "日時":"8/21(金) 16:00–22:00 ／ 8/22(土) 11:00–22:00 ／ 8/23(日) 11:00–21:00", "場所":"3500 N Southport Ave, Chicago", "料金":"入場無料（寄付制・地域団体への寄付になる）", "行き方":"CTA Brown Line「Southport」駅すぐ" },
     tips:"「ベストタコ」はその場でテキスト投票できる仕組みなので、食べ比べながら参加できる。Southport Corridor はもともとカフェや店が並ぶ歩きやすい通りで、フェスがなくても散歩に向いたエリア。ルチャリブレの時間帯は公式サイトで確認を。",
     link:"https://www.lakeviewroscoevillage.org/events-calendar/lakeview-taco-fest-2" },
 
-  { place:"unitedcenter", id:"next-bulls-fest-2026", resv:"reg", art:"basketball", cat:"sports", time:"8/22–23", ja:"ブルズ・フェス", en:"Bulls Fest 2026",
+  { place:"unitedcenter", id:"up-bulls-fest", resv:"reg", art:"basketball", cat:"sports", date:"2026-08-22", dateEnd:"2026-08-23",
+    time:"8/22–23", ja:"ブルズ・フェス", en:"Bulls Fest 2026",
     what:"シカゴ最大のバスケ祭り。入場無料", venue:"United Center キャンパス · 1901 W Madison St", price:"無料", dur:"2〜4時間",
     lead:"シカゴ・ブルズが主催する、街最大のバスケットボール・フェス。51面のコートを使った3on3トーナメントを中心に、ユースクリニック、現役選手・OBの登場、ファミリー向けアクティビティが2日間にわたって開かれる。今年で4回目。",
     meta:{ "日時":"8/22 (土)・8/23 (日)", "場所":"United Center キャンパス", "料金":"入場無料・全年齢対象", "出演":"ルーキーの Caleb Wilson、Dailyn Swain のほか、Nate Robinson、Metta World Peace らOBも登場", "行き方":"CTA #20 Madison バス。Blue Line「UIC–Halsted」から徒歩約20分" },
     tips:"3on3トーナメントに出るなら登録の締切が8/12なので注意（見るだけなら不要）。マスコットのBenny the Bullとの写真撮影やカーニバルゲームがあるキッズゾーンもあるので、見物だけでも十分楽しめる。入場無料なので、ふらっと寄って雰囲気だけ味わうのもあり。",
-    link:"https://www.nba.com/bulls/bullsfest" }
+    link:"https://www.nba.com/bulls/bullsfest" },
+
+  { place:"millennium", id:"up-house-music-festival", resv:"free", art:"summerdance", cat:"music", date:"2026-08-27", dateEnd:"2026-08-30",
+    time:"8/27–30", ja:"シカゴ・ハウスミュージック・フェスティバル", en:"Chicago House Music Festival & Conference",
+    what:"ハウス発祥の地シカゴの無料フェス。伝説的DJが集結", venue:"Chicago Cultural Center / Millennium Park", price:"無料", dur:"3〜4時間",
+    lead:"ハウスミュージックは1980年代のシカゴで生まれたジャンル。その発祥の地で開かれる市主催の無料フェスで、レジェンド級のDJのプレイ、ライブ、パネルディスカッションが4日間にわたって行われる。",
+    meta:{ "日時":"8/27 (木)〜8/30 (日)", "場所":"Chicago Cultural Center（会議・展示）と Millennium Park（野外ステージ）", "料金":"無料", "行き方":"CTA Red/Blue Line「Monroe」「Washington」、Metra「Millennium Station」" },
+    tips:"「ハウスの聖地」で本場のハウスを無料で聴けるという、シカゴでしか成立しないイベント。Cultural Center 側はカンファレンス寄りで、Millennium Park 側が野外パーティの雰囲気。踊る前提の靴で行くのがおすすめ。",
+    link:"https://www.chicago.gov/city/en/depts/dca/supp_info/dates.html" },
+
+  { place:"millennium", id:"up-jazz-festival", resv:"free", art:"orchestra", cat:"music", date:"2026-09-03", dateEnd:"2026-09-06", pick:true,
+    time:"9/3–6", ja:"シカゴ・ジャズ・フェスティバル", en:"Chicago Jazz Festival",
+    what:"レイバーデー週末の無料ジャズフェス。全米最大級", venue:"Millennium Park · 201 E Randolph St", price:"無料", dur:"3〜5時間",
+    lead:"1979年から続く、全米最大級の無料ジャズフェスティバル。レイバーデー週末にミレニアム・パークを中心に開催され、今年はディー・ディー・ブリッジウォーター＆ビル・チャーラップ、ロバート・グラスパー、M.E.B.（マイルス・エレクトリック・バンド）、パキート・デリベラらが登場する。",
+    meta:{ "日時":"9/3 (木) 18:00–21:00 ／ 9/4 (金)・9/5 (土)・9/6 (日) 16:00–21:00", "場所":"Jay Pritzker Pavilion, Millennium Park ほか市内各所", "料金":"完全無料", "主な出演":"Dee Dee Bridgewater & Bill Charlap Duo（9/3）、Robert Glasper（9/4）、M.E.B.（9/5）", "行き方":"CTA Red/Blue Line「Monroe」「Washington」" },
+    tips:"無料でこの規模のジャズが聴けるのはシカゴならでは。夕方4時開始なので、仕事を早めに切り上げて芝生で夕食を食べながら聴くのが定番。レイバーデー週末は市内が混むので、公共交通機関で行くこと。ブランケット持参推奨。",
+    link:"https://www.chicago.gov/city/en/depts/dca/provdrs/chicago_festivals.html" },
+
+  { place:"unionpark", id:"up-arc-music-festival", resv:"buy", art:"summerdance", cat:"music", date:"2026-09-04", dateEnd:"2026-09-07",
+    time:"9/4–7", ja:"ARC ミュージック・フェスティバル", en:"ARC Music Festival",
+    what:"ハウス／テクノの大型フェス。18歳以上", venue:"Union Park · 1501 W Randolph St", price:"要確認", dur:"半日〜終日",
+    lead:"シカゴ発祥のハウスを軸にした大型ダンスミュージック・フェス。2026年は4日間に拡大し、Underworld、Honey Dijon、Michael Bibi、Sara Landry らが出演する。18歳以上限定。",
+    meta:{ "日時":"9/4 (金)〜9/7 (月・レイバーデー)", "場所":"Union Park, 1501 W Randolph St", "料金":"有料（公式サイトで要確認）", "年齢制限":"18歳以上", "行き方":"CTA Green/Pink Line「Ashland」駅すぐ" },
+    tips:"ハウス発祥の地で本場のダンスミュージックを浴びるイベント。日中から夜まで屋外で立ちっぱなしになるので、歩きやすい靴と日焼け対策が必須。同じ週末に無料のジャズフェスもあるので、予算に応じて選べる。",
+    link:"https://arcmusicfestival.com/" },
+
+  { place:"bridgeview", id:"up-north-coast-music-festival", resv:"buy", art:"arena", cat:"music", date:"2026-09-04", dateEnd:"2026-09-06",
+    time:"9/4–6", ja:"ノースコースト・ミュージック・フェス", en:"North Coast Music Festival",
+    what:"EDM／ヒップホップの3日間フェス。全年齢", venue:"SeatGeek Stadium · Bridgeview（南西郊）", price:"要確認", dur:"半日〜終日",
+    lead:"レイバーデー週末恒例の大型フェス。2026年は FISHER、GRiZ、BUNT.、Crankdat らが出演。会場はシカゴ南西郊外のスタジアム敷地で、全年齢対応。",
+    meta:{ "日時":"9/4 (金)〜9/6 (日)", "場所":"SeatGeek Stadium, Bridgeview（シカゴ南西郊）", "料金":"有料（公式サイトで要確認）", "行き方":"車で約30分。公共交通機関だとやや不便" },
+    tips:"市内ではなく郊外のスタジアムなので、車か配車アプリでの移動が現実的。ARC は18歳以上だがこちらは全年齢なので、家族連れでも行ける。同じ週末に3つの大型フェスが重なるため、宿や交通は早めの確保を。",
+    link:"https://northcoastfestival.com/" },
+
+  { place:"millennium", id:"up-el-grito", resv:"buy", art:"sangria", cat:"food", date:"2026-09-12", dateEnd:"2026-09-13",
+    time:"9/12–13", ja:"エル・グリート（メキシコ独立記念祭）", en:"El Grito Chicago",
+    what:"メキシコ独立記念の祝祭。マリアッチと花火", venue:"Grant Park · Butler Field", price:"$10〜", dur:"3〜5時間",
+    lead:"メキシコ独立記念日を祝う祭典。ライブ、マリアッチ、バレエ・フォルクロリコ、そして独立の号令「グリート」の再現式典と花火が行われる。昨年は入国管理の懸念で中止になったが、2026年はグラント・パークに復活する。",
+    meta:{ "日時":"9/12 (土)・9/13 (日) 14:00–22:00", "場所":"Grant Park – Butler Field", "料金":"1日券 早割 $10（当日 $20〜$40）／2日券 $15〜", "行き方":"CTA Red/Blue Line「Monroe」「Jackson」、Metra「Millennium Station」" },
+    tips:"シカゴはメキシコ系人口が全米有数で、この祭りは街の性格を最もよく表すイベントのひとつ。早割で買えばかなり安い。式典と花火は無料枠なので、そこだけ見に行くのもあり。屋台のメキシコ料理が本格的。",
+    link:"https://elgritochicago.com/" },
+
+  { place:"printersrow", id:"up-printers-row-lit-fest", resv:"free", art:"artfair", cat:"art", date:"2026-09-12",
+    time:"9/12", ja:"プリンターズ・ロウ・リットフェス", en:"Printers Row Lit Fest",
+    what:"中西部最大級の野外ブックフェア", venue:"Printer's Row（Dearborn St 周辺）", price:"無料", dur:"2〜3時間",
+    lead:"かつて印刷・出版で栄えたプリンターズ・ロウで開かれる、中西部最大級の野外ブックフェア。古書店や出版社のブースが通りに並び、作家のトークイベントも行われる。8月のアートフェスとは別のイベント。",
+    meta:{ "日時":"9/12 (土)", "場所":"Printer's Row Neighborhood（Dearborn St 周辺）", "料金":"入場無料", "行き方":"CTA Red Line「Harrison」駅、Metra「LaSalle Street Station」" },
+    tips:"英語の本が中心だが、古書の掘り出し物や絵本、アートブックも多く、言語の壁が低いブースも多い。地区の歴史的な印刷所建築を眺めながら歩けるので、本に興味がなくても散歩として楽しめる。",
+    link:"https://printersrowlitfest.org/" },
+
+  { place:"douglass", id:"up-riot-fest", resv:"buy", art:"arena", cat:"music", date:"2026-09-18", dateEnd:"2026-09-20", pick:true,
+    time:"9/18–20", ja:"ライオット・フェス", en:"Riot Fest 2026",
+    what:"シカゴ最大のパンク／ロックフェス。100組超", venue:"Douglass Park · 1401 S Sacramento Dr", price:"1日 $190〜", dur:"終日",
+    lead:"シカゴを代表するパンク／オルタナティブロックの大型フェス。カーニバルの乗り物が併設されているのが特徴で、2026年は Tool、Morrissey、Social Distortion をはじめ100組以上が出演する。",
+    meta:{ "日時":"9/18 (金)〜9/20 (日)", "場所":"Douglass Park, 1401 S Sacramento Dr", "料金":"1日券 $190前後〜／3日通し券 $379〜", "主な出演":"Tool、Morrissey、Social Distortion ほか100組超", "行き方":"CTA Blue Line「Western」駅からバス、または配車アプリ" },
+    tips:"9月中旬のシカゴは夜がかなり冷えるので、日中の暑さと夜の寒さの両方に対応できる服装を。カーニバルの観覧車から見るステージの眺めが名物。3日通し券は割高なので、目当てのバンドの日だけ買うのが現実的。",
+    link:"https://riotfest.org/" }
 ];
 
 const NOW = [
@@ -701,9 +805,18 @@ function ticketHTML(t, i) {
     <span class="t-foot"><span class="${priceClass(t.price)}" style="font-size:13px">${esc(t.price)}</span><span class="t-stay">${esc(t.stay)}</span></span>
   </button>`;
 }
+/* STORE に登録して索引を覚える（カレンダーから開くのに使う） */
+function reg(it) { if (it._idx === undefined) { it._idx = STORE.length; STORE.push(it); } return it._idx; }
 function mount(el, items, tpl) {
-  el.innerHTML = items.map(it => { STORE.push(it); return tpl(it, STORE.length - 1); }).join("");
+  el.innerHTML = items.map(it => tpl(it, reg(it))).join("");
 }
+/* 同じイベントが複数日に分かれている場合は1行にまとめる */
+const baseName = (ja) => ja
+  .replace(/[（(][^）)]*[）)]/g, "")
+  .replace(/\s*(初日|最終日|今季最終公演|開幕|\d+日目)\s*$/g, "")
+  .trim();
+const hash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h).toString(36); };
+
 function mountDays(el, days) {
   el.innerHTML = days.map(d => {
     const head = `<div class="day-head">
@@ -712,10 +825,18 @@ function mountDays(el, days) {
       ${d.today ? '<span class="day-today">今日</span>' : ""}
       <span class="day-count">${d.items.length}件</span>
     </div>`;
-    return head + d.items.map(it => { it._day = d.day; STORE.push(it); return rowHTML(it, STORE.length - 1); }).join("");
+    return head + d.items.map(it => { it._day = d.day; return rowHTML(it, reg(it)); }).join("");
   }).join("");
 }
 mountDays(document.getElementById("week-list"), WEEK);
+/* 来週の目玉 = UPCOMING のうち、今週の日曜の翌日から1週間ぶん */
+const YEAR = 2026;
+const firstWeekDay = WEEK[0].day.split("/");
+const weekStart = new Date(YEAR, +firstWeekDay[0] - 1, +firstWeekDay[1]);
+const nextStart = new Date(weekStart); nextStart.setDate(nextStart.getDate() + (7 - weekStart.getDay()) % 7 + 1);
+const nextEnd = new Date(nextStart); nextEnd.setDate(nextEnd.getDate() + 6);
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const NEXT = UPCOMING.filter(e => e.date <= iso(nextEnd) && (e.dateEnd || e.date) >= iso(nextStart));
 mount(document.getElementById("next-list"), NEXT, rowHTML);
 mount(document.getElementById("now-list"), NOW, rowHTML);
 mount(document.getElementById("trip-list"), TRIPS, ticketHTML);
@@ -725,6 +846,67 @@ document.getElementById("n-week").textContent = WEEK.reduce((a, d) => a + d.item
 document.getElementById("n-next").textContent = NEXT.length;
 document.getElementById("n-now").textContent  = NOW.length;
 document.getElementById("n-trip").textContent = TRIPS.length;
+
+/* ================= カレンダー ================= */
+/* 日付 → イベントの索引 */
+const byDate = {};
+const addDate = (d, idx) => { (byDate[d] ||= []).includes(idx) || (byDate[d] ||= []).push(idx); };
+
+WEEK.forEach(d => {
+  const [m, day] = d.day.split("/");
+  const key = `${YEAR}-${String(+m).padStart(2, "0")}-${String(+day).padStart(2, "0")}`;
+  d.items.forEach(it => addDate(key, reg(it)));
+});
+UPCOMING.forEach(e => {
+  const idx = reg(e);
+  const s = new Date(e.date + "T12:00:00");
+  const en = new Date((e.dateEnd || e.date) + "T12:00:00");
+  for (let d = new Date(s); d <= en; d.setDate(d.getDate() + 1)) addDate(iso(d), idx);
+});
+
+const TODAY_ISO = iso(weekStart);
+const DOW_JA = ["日", "月", "火", "水", "木", "金", "土"];
+const MON_EN = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+
+function monthHTML(y, m) {
+  const first = new Date(y, m, 1), last = new Date(y, m + 1, 0);
+  let cells = "";
+  for (let i = 0; i < first.getDay(); i++) cells += `<div class="cal-cell"></div>`;
+  for (let d = 1; d <= last.getDate(); d++) {
+    const key = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const n = (byDate[key] || []).length;
+    const dots = n ? `<span class="cal-dots">${"<i></i>".repeat(Math.min(n, 3))}</span>` : `<span class="cal-dots"></span>`;
+    cells += `<div class="cal-cell"><button type="button"
+      class="cal-d${n ? " has-ev" : ""}${key === TODAY_ISO ? " is-today" : ""}"
+      ${n ? `data-date="${key}" aria-pressed="false"` : "disabled"}
+      aria-label="${m + 1}月${d}日${n ? ` ${n}件` : " 予定なし"}">${d}${dots}</button></div>`;
+  }
+  return `<div class="cal-m"><h3>${MON_EN[m]} ${y}</h3>
+    <div class="cal-grid">${DOW_JA.map((w, i) => `<div class="cal-dow${i === 0 ? " is-sun" : ""}">${w}</div>`).join("")}${cells}</div></div>`;
+}
+
+const calStart = new Date(weekStart.getFullYear(), weekStart.getMonth(), 1);
+document.getElementById("cal-months").innerHTML =
+  monthHTML(calStart.getFullYear(), calStart.getMonth()) +
+  monthHTML(calStart.getFullYear() + (calStart.getMonth() === 11 ? 1 : 0), (calStart.getMonth() + 1) % 12);
+
+function selectDate(key) {
+  document.querySelectorAll(".cal-d[data-date]").forEach(b =>
+    b.setAttribute("aria-pressed", b.dataset.date === key ? "true" : "false"));
+  const d = new Date(key + "T12:00:00");
+  const box = document.getElementById("cal-day-list");
+  const idxs = byDate[key] || [];
+  box.innerHTML = `<div class="cal-selected-head">
+      <span class="d1">${d.getMonth() + 1}/${d.getDate()}</span>
+      <span class="d2">${DOW_JA[d.getDay()]}曜日 · ${idxs.length}件</span>
+    </div>` + idxs.map(i => rowHTML(STORE[i], i)).join("");
+  box.hidden = false;
+  renderGoers();
+}
+document.getElementById("cal-months").addEventListener("click", (ev) => {
+  const b = ev.target.closest(".cal-d[data-date]");
+  if (b) selectDate(b.dataset.date);
+});
 
 /* ---------- dialog ---------- */
 const dlg = document.getElementById("detail");
@@ -847,7 +1029,7 @@ function renderGoers() {
   document.querySelectorAll("[data-goers]").forEach(box => {
     const id = box.dataset.goers;
     const names = rsvps[id] || [];
-    const btn = document.querySelector(`[data-go="${CSS.escape(id)}"]`);
+    const btn = box.parentElement.querySelector(`[data-go="${CSS.escape(id)}"]`);
     if (btn) {
       btn.disabled = !CONFIGURED;
       const mine = myName && names.includes(myName);
@@ -949,11 +1131,14 @@ const PLACES = {
   humboldt:     { ja: "フンボルト・パーク", lat: 41.9030, lng: -87.6940 },
   unitedcenter: { ja: "ユナイテッド・センター", lat: 41.8807, lng: -87.6742 },
   millennium:   { ja: "ミレニアム／グラント・パーク", lat: 41.8826, lng: -87.6226 },
+  unionpark:    { ja: "ユニオン・パーク", lat: 41.8846, lng: -87.6664 },
   printersrow:  { ja: "プリンターズ・ロウ", lat: 41.8720, lng: -87.6290 },
+  douglass:     { ja: "ダグラス・パーク", lat: 41.8639, lng: -87.7000 },
   ratefield:    { ja: "レート・フィールド", lat: 41.8299, lng: -87.6338 },
   ravinia:      { ja: "ラヴィニア（ハイランドパーク）", suburb: "北郊 約40km" },
   highwood:     { ja: "ハイウッド", suburb: "北郊 約45km" },
-  willowsprings:{ ja: "ウィロースプリングス", suburb: "南西郊 約30km" }
+  willowsprings:{ ja: "ウィロースプリングス", suburb: "南西郊 約30km" },
+  bridgeview:   { ja: "ブリッジビュー", suburb: "南西郊 約25km" }
 };
 
 const MAPW = 300, MAPH = 430;
@@ -982,7 +1167,7 @@ const pins = cityKeys.map(k => {
 }).join("");
 
 document.getElementById("map-pane").innerHTML = `
-<svg viewBox="0 0 ${MAPW} ${MAPH}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="シカゴの会場マップ">
+<svg viewBox="0 0 ${MAPW} ${MAPH}" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="シカゴの会場マップ">
   <defs><clipPath id="landclip"><rect width="${MAPW}" height="${MAPH}"/></clipPath></defs>
   <g clip-path="url(#landclip)">
     <g stroke="#CBD9E2" stroke-width=".6" opacity=".75">
@@ -995,8 +1180,8 @@ document.getElementById("map-pane").innerHTML = `
           fill="none" stroke="#9FC2DA" stroke-width="3.4" stroke-linecap="round"/>
     <rect x="197" y="260" width="30" height="30" fill="none" stroke="#5E88A8" stroke-width="1.3" stroke-dasharray="3 2"/>
     <text x="190" y="252" text-anchor="end" class="pin-label" style="letter-spacing:.12em">THE LOOP</text>
-    <text x="272" y="120" text-anchor="middle" class="pin-label" style="font-size:10px;fill:#4E7B99;letter-spacing:.14em" transform="rotate(90 272 120)">LAKE MICHIGAN</text>
-    <text x="14" y="24" class="pin-label" style="letter-spacing:.14em">N ↑</text>
+    <text x="264" y="124" text-anchor="middle" class="pin-label" style="font-size:10px;fill:#4E7B99;letter-spacing:.14em" transform="rotate(90 264 124)">LAKE MICHIGAN</text>
+    <text x="28" y="30" class="pin-label" style="letter-spacing:.14em">N ↑</text>
     ${pins}
   </g>
 </svg>`;
@@ -1019,10 +1204,17 @@ function selectPlace(k) {
   const box = document.getElementById("map-events");
   document.getElementById("map-ev-title").textContent =
     PLACES[k].ja + (PLACES[k].suburb ? `（${PLACES[k].suburb}）` : "");
-  document.getElementById("map-ev-list").innerHTML = byPlace[k].map(i => {
+  /* 同じイベントが複数日にある場合は1つにまとめて日付を並べる */
+  const merged = new Map();
+  byPlace[k].forEach(i => {
     const e = STORE[i];
-    const when = e._day ? `${e._day} ${e.time}` : e.time;
-    return `<button class="map-ev" type="button" data-open="${i}"><span class="mev-t">${esc(when)}</span>${esc(e.ja)}</button>`;
+    const key = (e.link || "") + "||" + baseName(e.ja);
+    if (!merged.has(key)) merged.set(key, { i, ja: baseName(e.ja), time: e.time, days: e._day ? [e._day] : [] });
+    else { const m = merged.get(key); if (e._day && !m.days.includes(e._day)) m.days.push(e._day); }
+  });
+  document.getElementById("map-ev-list").innerHTML = [...merged.values()].map(m => {
+    const when = m.days.length ? `${m.days.join("・")} ${m.time}` : m.time;
+    return `<button class="map-ev" type="button" data-open="${m.i}"><span class="mev-t">${esc(when)}</span>${esc(m.ja)}</button>`;
   }).join("");
   box.hidden = false;
 }
