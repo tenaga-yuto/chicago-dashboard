@@ -1,0 +1,476 @@
+<title>Chicago Dashboard — 今日と今週末</title>
+<style>
+  /* ---------- tokens (light only — 白ベース固定) ---------- */
+  :root {
+    --bg: #FAFBFB;
+    --surface: #FFFFFF;
+    --surface-2: #F5F8F9;
+    --ink: #10171A;
+    --ink-soft: #4B5A60;
+    --ink-faint: #7C8B90;
+    --line: #DDE4E3;
+    --line-soft: #EBF0EF;
+    --accent: #1C4E80;
+    --accent-soft: #EAF1F7;
+    --flag-red: #C8102E;
+    --good: #276749;
+    --good-soft: #E6F2EB;
+    --warn: #8A5A08;
+    --warn-soft: #FAF0DC;
+    --shadow: 0 24px 60px rgba(16, 23, 26, .22);
+
+    --ill-bg: #E9F0F5;
+    --ill-0: #FFFFFF;
+    --ill-1: #1C4E80;
+    --ill-2: #92B5D2;
+    --ill-3: #C8102E;
+
+    --font-display: "Archivo Narrow", "Roboto Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+    --font-body: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+
+  /* category colors */
+  .c-sports  { --cat: #2F6B4F; --cat-bg: #E8F2EC; }
+  .c-music   { --cat: #5C3E96; --cat-bg: #EFEBF7; }
+  .c-art     { --cat: #9A5410; --cat-bg: #FAEFE2; }
+  .c-food    { --cat: #A82437; --cat-bg: #FAE9EB; }
+  .c-dance   { --cat: #16707C; --cat-bg: #E4F2F4; }
+  .c-air     { --cat: #1C4E80; --cat-bg: #E7EFF6; }
+  .c-nature  { --cat: #4A7229; --cat-bg: #EDF4E4; }
+  .c-town    { --cat: #7A5427; --cat-bg: #F6EFE4; }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .page { max-width: 1120px; margin: 0 auto; padding: 0 20px 64px; }
+
+  /* ---------- masthead ---------- */
+  .masthead { padding: 28px 0 22px; position: relative; }
+  .masthead::before {
+    content: ""; position: absolute; top: 0; left: -20px; right: -20px; height: 5px;
+    background: linear-gradient(90deg, var(--accent) 0 40%, var(--flag-red) 40% 44%, transparent 44% 56%, var(--flag-red) 56% 60%, var(--accent) 60% 100%);
+  }
+  .eyebrow-row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+  h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(34px, 6vw, 54px); letter-spacing: .01em; text-transform: uppercase; margin: 4px 0 6px; text-wrap: balance; }
+  .subtitle { font-style: italic; color: var(--ink-soft); font-size: 17px; max-width: 60ch; margin: 0; }
+
+  .stat-strip { display: flex; margin-top: 22px; border: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+  .stat { flex: 1 1 130px; padding: 12px 16px; border-right: 1px solid var(--line); }
+  .stat:last-child { border-right: none; }
+  .stat-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 24px; font-weight: 600; color: var(--accent); display: block; }
+  .stat-label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); font-family: var(--font-mono); }
+
+  /* ---------- legend ---------- */
+  .legend { margin-top: 14px; border: 1px solid var(--line); background: var(--surface); padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; }
+  .legend-t { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); }
+  .legend-i { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-soft); }
+
+  /* ---------- sections ---------- */
+  .section-head { display: flex; align-items: baseline; gap: 10px; margin: 40px 0 14px; }
+  .section-head h2 { font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: .03em; font-size: 22px; margin: 0; }
+  .section-head .range { font-family: var(--font-mono); font-size: 13px; color: var(--ink-faint); }
+  .section-head::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .board-col { border: 1px solid var(--line); background: var(--surface); }
+
+  /* ---------- chips ---------- */
+  .cat {
+    display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px;
+    background: var(--cat-bg); color: var(--cat); font-family: var(--font-mono);
+    font-size: 10.5px; letter-spacing: .07em; white-space: nowrap; flex-shrink: 0;
+  }
+  .cat svg { width: 12px; height: 12px; flex-shrink: 0; }
+  .pick {
+    display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px;
+    background: var(--flag-red); color: #fff; font-family: var(--font-mono);
+    font-size: 10.5px; letter-spacing: .07em; white-space: nowrap; flex-shrink: 0;
+  }
+  .pick svg { width: 11px; height: 11px; }
+  .free-chip { display: inline-flex; padding: 3px 8px; background: var(--good-soft); color: var(--good); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .07em; }
+
+  /* ---------- event rows ---------- */
+  button.row {
+    appearance: none; font: inherit; color: inherit; background: var(--surface);
+    border: none; border-bottom: 1px solid var(--line-soft); width: 100%; text-align: left; cursor: pointer;
+    display: grid; grid-template-columns: 68px 1fr auto 16px; gap: 6px 14px; align-items: start;
+    padding: 15px 16px; transition: background .14s ease;
+  }
+  button.row:last-child { border-bottom: none; }
+  button.row:hover { background: var(--accent-soft); }
+  button.row:hover .chev { transform: translateX(3px); opacity: 1; }
+  .time { font-family: var(--font-mono); font-weight: 600; font-size: 13px; color: var(--accent); letter-spacing: .01em; padding-top: 3px; font-variant-numeric: tabular-nums; }
+  .row-main { min-width: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .row-main h3 { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin: 0 0 2px; letter-spacing: .01em; }
+  .what { display: block; font-size: 13.5px; color: var(--ink); margin-bottom: 3px; }
+  .venue { display: block; font-size: 13px; color: var(--ink-faint); }
+  .row-end { text-align: right; padding-top: 2px; }
+  .price { font-family: var(--font-mono); font-size: 15px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; display: block; }
+  .price.is-free { color: var(--good); }
+  .price.is-tbd { font-size: 12.5px; font-weight: 400; color: var(--ink-faint); }
+  .dur { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-faint); white-space: nowrap; display: block; margin-top: 3px; }
+  .chev { color: var(--accent); opacity: .4; transition: transform .14s ease, opacity .14s ease; font-size: 16px; padding-top: 2px; }
+  @media (max-width: 700px) {
+    button.row { grid-template-columns: 60px 1fr 16px; }
+    .row-end { grid-column: 2 / 3; text-align: left; display: flex; gap: 14px; align-items: baseline; }
+    .dur { margin-top: 0; }
+  }
+
+  /* ---------- trip tickets ---------- */
+  .trips { display: flex; gap: 16px; overflow-x: auto; padding: 4px 4px 16px; margin: 0 -4px; }
+  button.ticket {
+    appearance: none; font: inherit; color: inherit; text-align: left; cursor: pointer;
+    flex: 0 0 258px; background: var(--surface); border: 1px solid var(--line);
+    position: relative; padding: 16px 16px 14px; transition: background .14s ease;
+  }
+  button.ticket:hover { background: var(--accent-soft); }
+  button.ticket::before, button.ticket::after {
+    content: ""; position: absolute; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--bg); border: 1px solid var(--line); top: 50%; transform: translateY(-50%);
+  }
+  button.ticket::before { left: -8px; }
+  button.ticket::after { right: -8px; }
+  .dist { font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint); letter-spacing: .04em; display: block; margin-bottom: 8px; }
+  .ticket h3 { font-family: var(--font-display); font-size: 19px; margin: 8px 0 4px; }
+  .ticket p { font-size: 13.5px; color: var(--ink-soft); margin: 0 0 12px; }
+  .t-foot { border-top: 1px dashed var(--line); padding-top: 9px; display: flex; justify-content: space-between; align-items: baseline; }
+  .t-stay { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-faint); }
+
+  /* ---------- dialog ---------- */
+  dialog#detail { padding: 0; border: 1px solid var(--line); background: var(--surface); color: var(--ink); max-width: 640px; width: calc(100% - 32px); max-height: 88vh; box-shadow: var(--shadow); }
+  dialog#detail::backdrop { background: rgba(16, 23, 26, .45); backdrop-filter: blur(3px); }
+  .d-scroll { overflow-y: auto; max-height: 88vh; }
+  .d-ill { background: var(--ill-bg); line-height: 0; position: relative; }
+  .d-ill svg { width: 100%; height: auto; display: block; }
+  .d-close { position: absolute; top: 10px; right: 10px; z-index: 2; appearance: none; cursor: pointer; width: 34px; height: 34px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 17px; line-height: 1; font-family: var(--font-mono); }
+  .d-close:hover { background: var(--accent-soft); }
+  .d-body { padding: 22px 26px 26px; }
+  @media (max-width: 520px) { .d-body { padding: 18px 18px 22px; } }
+  .d-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+  .d-body h2 { font-family: var(--font-display); font-size: 27px; font-weight: 800; margin: 0 0 3px; letter-spacing: .01em; text-wrap: balance; }
+  .d-en { font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint); letter-spacing: .03em; }
+  .d-headline { display: flex; gap: 12px; margin: 16px 0 0; border: 1px solid var(--line); }
+  .d-hl { flex: 1; padding: 10px 14px; border-right: 1px solid var(--line); }
+  .d-hl:last-child { border-right: none; }
+  .d-hl-k { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); display: block; }
+  .d-hl-v { font-family: var(--font-mono); font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .d-lead { font-size: 15.5px; color: var(--ink-soft); margin: 18px 0 0; max-width: 62ch; }
+  .d-meta { display: grid; grid-template-columns: 92px 1fr; gap: 1px; margin: 20px 0 0; background: var(--line); border: 1px solid var(--line); }
+  .d-meta dt { background: var(--surface-2); padding: 9px 12px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-faint); }
+  .d-meta dd { background: var(--surface); padding: 9px 12px; margin: 0; font-size: 14.5px; }
+  .d-tips { margin-top: 20px; border-left: 3px solid var(--flag-red); padding: 2px 0 2px 14px; }
+  .d-tips h3 { font-family: var(--font-display); font-size: 14px; text-transform: uppercase; letter-spacing: .08em; margin: 0 0 6px; }
+  .d-tips p { margin: 0; font-size: 14.5px; color: var(--ink-soft); }
+  .d-link { display: inline-block; margin-top: 22px; font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .06em; text-decoration: none; border: 1px solid var(--accent); color: var(--accent); padding: 10px 16px; }
+  .d-link:hover { background: var(--accent); color: #fff; }
+
+  footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--ink-faint); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  footer a { color: var(--ink-faint); }
+  .sources { font-family: var(--font-mono); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="page">
+  <header class="masthead">
+    <div class="eyebrow-row">
+      <span class="eyebrow">CHICAGO, IL — 一年間の駐在ダッシュボード</span>
+      <span class="eyebrow">最終更新 2026-08-11 (火)</span>
+    </div>
+    <h1>Chicago Dashboard</h1>
+    <p class="subtitle">今日と今週末、シカゴで何が起きているか。夏の終わりまでにどれだけ遊べるか、ここで一目で把握する。</p>
+
+    <div class="stat-strip">
+      <div class="stat"><span class="stat-num">3</span><span class="stat-label">今日</span></div>
+      <div class="stat"><span class="stat-num">2</span><span class="stat-label">開催中</span></div>
+      <div class="stat"><span class="stat-num">6</span><span class="stat-label">今週末</span></div>
+      <div class="stat"><span class="stat-num">5</span><span class="stat-label">週末旅行</span></div>
+    </div>
+
+    <div class="legend">
+      <span class="legend-t">凡例</span>
+      <span class="legend-i"><span class="pick"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1l2 4.6 5 .4-3.8 3.3 1.2 4.9L8 11.6 3.6 14.2l1.2-4.9L1 6l5-.4z"/></svg>目玉</span>特におすすめ・その週の一番</span>
+      <span class="legend-i"><span class="free-chip">無料</span>参加費なし</span>
+      <span class="legend-i"><span class="price" style="font-size:13px">$40〜</span>最安値の目安（変動あり）</span>
+      <span class="legend-i"><span class="dur">約3時間</span>現地での滞在時間の目安</span>
+      <span class="legend-i">行を押すと詳細（行き方・コツ・公式サイト）</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="today-head">
+    <div class="section-head"><h2 id="today-head">今日</h2><span class="range">TUE · AUG 11, 2026</span></div>
+    <div class="board-col" id="today-list"></div>
+  </section>
+
+  <section aria-labelledby="now-head">
+    <div class="section-head"><h2 id="now-head">開催中</h2><span class="range">シーズン中いつでも行けるもの</span></div>
+    <div class="board-col" id="now-list"></div>
+  </section>
+
+  <section aria-labelledby="weekend-head">
+    <div class="section-head"><h2 id="weekend-head">今週末</h2><span class="range">FRI–SUN · AUG 14–16, 2026</span></div>
+    <div class="board-col" id="wk-list"></div>
+  </section>
+
+  <section aria-labelledby="trip-head">
+    <div class="section-head"><h2 id="trip-head">週末小旅行</h2><span class="range">シカゴから車で行ける範囲</span></div>
+    <div class="trips" id="trip-list"></div>
+  </section>
+
+  <footer>
+    <span>Web検索による参考情報（2026-08-11時点）。価格は最安値の目安で、席種・購入時期で大きく変わります。日時・料金は各公式サイトで最終確認を。</span>
+    <span class="sources">
+      <a href="https://www.choosechicago.com/events/" target="_blank" rel="noopener">Choose Chicago</a> ·
+      <a href="https://do312.com/festivals" target="_blank" rel="noopener">Do312</a> ·
+      <a href="https://www.chicago.gov/city/en/depts/dca/supp_info/dates.html" target="_blank" rel="noopener">DCASE</a>
+    </span>
+  </footer>
+</div>
+
+<dialog id="detail" aria-labelledby="d-title">
+  <div class="d-scroll">
+    <div class="d-ill">
+      <button class="d-close" type="button" aria-label="閉じる">✕</button>
+      <div id="d-ill-slot"></div>
+    </div>
+    <div class="d-body">
+      <div class="d-chips" id="d-chips"></div>
+      <h2 id="d-title"></h2>
+      <div class="d-en" id="d-en"></div>
+      <div class="d-headline" id="d-headline"></div>
+      <p class="d-lead" id="d-lead"></p>
+      <dl class="d-meta" id="d-meta"></dl>
+      <div class="d-tips"><h3>現地のコツ</h3><p id="d-tips"></p></div>
+      <a class="d-link" id="d-link" target="_blank" rel="noopener">公式サイトを開く →</a>
+    </div>
+  </div>
+</dialog>
+
+<script>
+/* ---------- category icons ---------- */
+const ICON = {
+  sports: '<circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4.4 4.1Q7.6 8 4.4 11.9M11.6 4.1Q8.4 8 11.6 11.9" fill="none" stroke="currentColor" stroke-width="1.3"/>',
+  music: '<circle cx="4.4" cy="12.2" r="2.5"/><circle cx="11.6" cy="10.4" r="2.5"/><path d="M6.9 12.2V4.2L14.1 2.4v8" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  art: '<rect x="1.6" y="3" width="12.8" height="10" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.4 11.2l3.4-3.4 2.4 2.4 3-3 2.4 2.4" fill="none" stroke="currentColor" stroke-width="1.4"/>',
+  food: '<path d="M3.6 1.8h8.8l-1.1 5.1a3.3 3.3 0 0 1-6.6 0z"/><path d="M8 9.6v4.2M5.4 13.8h5.2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>',
+  dance: '<circle cx="8.4" cy="2.6" r="2"/><path d="M8.4 5v4.4m0 0-2.6 4.8m2.6-4.8 2.6 4.8M4.6 7.2 8.4 6l3.8 1.2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>',
+  air: '<path d="M1.4 9.4 13.8 5.6l-2.9 3.8 2.9 3.8z"/><path d="M1 3.4q4.6-.8 8.6.6" fill="none" stroke="currentColor" stroke-width="1.3" opacity=".65"/>',
+  nature: '<path d="M8 1.6 14.4 13H1.6z"/><path d="M4.6 8.6 8 6l3.4 2.6" fill="none" stroke="#fff" stroke-width="1.3"/><path d="M1 14.6h14" stroke="currentColor" stroke-width="1.5"/>',
+  town: '<rect x="1.4" y="6" width="4.6" height="8"/><rect x="7" y="2.6" width="4" height="11.4"/><rect x="12" y="7.6" width="2.8" height="6.4"/><path d="M2.8 8.4h1.8M2.8 11h1.8M8.4 5h1.4M8.4 7.6h1.4M8.4 10.2h1.4" stroke="#fff" stroke-width="1"/>'
+};
+const CAT = {
+  sports: "スポーツ", music: "音楽", art: "アート", food: "フード＆ドリンク",
+  dance: "ダンス", air: "野外イベント", nature: "自然・アウトドア", town: "町歩き"
+};
+const catHTML = (k) => `<span class="cat c-${k}"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">${ICON[k]}</svg>${CAT[k]}</span>`;
+const pickHTML = '<span class="pick"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1l2 4.6 5 .4-3.8 3.3 1.2 4.9L8 11.6 3.6 14.2l1.2-4.9L1 6l5-.4z"/></svg>目玉</span>';
+
+/* ---------- illustrations ---------- */
+const S = (b) => `<svg viewBox="0 0 400 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true"><rect width="400" height="140" fill="var(--ill-bg)"/>${b}</svg>`;
+const ART = {
+  baseball: S(`<path d="M0 140 Q200 44 400 140 Z" fill="var(--ill-2)" opacity=".6"/><path d="M200 74 L250 108 L200 140 L150 108 Z" fill="var(--ill-1)"/><circle cx="200" cy="108" r="4.5" fill="var(--ill-bg)"/><path d="M56 140 V54 M34 50 h44" stroke="var(--ill-1)" stroke-width="4" fill="none"/><path d="M344 140 V54 M322 50 h44" stroke="var(--ill-1)" stroke-width="4" fill="none"/><circle cx="200" cy="40" r="19" fill="var(--ill-0)" stroke="var(--ill-3)" stroke-width="3.5"/><path d="M188 29 Q200 40 188 51 M212 29 Q200 40 212 51" fill="none" stroke="var(--ill-3)" stroke-width="2.5"/>`),
+  arena: S(`<path d="M118 0 L58 140 L112 140 L152 0 Z" fill="var(--ill-2)" opacity=".4"/><path d="M282 0 L292 140 L346 140 L316 0 Z" fill="var(--ill-2)" opacity=".4"/><path d="M198 0 L176 140 L228 140 L232 0 Z" fill="var(--ill-2)" opacity=".28"/><rect x="66" y="58" width="24" height="50" fill="var(--ill-1)"/><rect x="310" y="58" width="24" height="50" fill="var(--ill-1)"/><rect x="90" y="98" width="220" height="10" fill="var(--ill-1)"/><circle cx="200" cy="72" r="8.5" fill="var(--ill-3)"/><path d="M200 81 v16" stroke="var(--ill-3)" stroke-width="3.5"/><path d="M0 140 v-20 q22-12 34 0 q16-14 32 0 q18-13 34 0 q17-14 34 0 q19-13 33 0 q20-14 35 0 q19-13 34 0 q21-13 36 0 q22-12 38 0 q20-11 30 0 V140 Z" fill="var(--ill-1)"/>`),
+  ravinia: S(`<g fill="var(--ill-2)"><circle cx="46" cy="22" r="2.2"/><circle cx="120" cy="14" r="1.8"/><circle cx="300" cy="20" r="2.2"/><circle cx="360" cy="34" r="1.8"/></g><path d="M26 112 q0-44 24-60 q24 16 24 60 Z" fill="var(--ill-1)"/><path d="M336 112 q0-36 20-50 q20 14 20 50 Z" fill="var(--ill-1)"/><path d="M136 98 L200 52 L264 98 Z" fill="var(--ill-1)"/><rect x="148" y="98" width="104" height="14" fill="var(--ill-2)"/><rect y="112" width="400" height="28" fill="var(--ill-2)" opacity=".5"/><rect x="86" y="118" width="72" height="16" fill="var(--ill-3)" opacity=".85"/><path d="M86 126 h72 M104 118 v16 M122 118 v16 M140 118 v16" stroke="var(--ill-0)" stroke-width="1.5"/><circle cx="284" cy="120" r="8" fill="var(--ill-1)"/><path d="M284 128 q-10 4 -10 12 h20 q0-8 -10-12" fill="var(--ill-1)"/>`),
+  orchestra: S(`<path d="M0 28 Q200 -12 400 28" stroke="var(--ill-2)" stroke-width="2" fill="none"/><path d="M0 44 Q200 4 400 44" stroke="var(--ill-2)" stroke-width="2" fill="none"/><path d="M56 18 V102 M140 8 V102 M260 8 V102 M344 18 V102" stroke="var(--ill-2)" stroke-width="1.5"/><path d="M116 102 q18-72 72-66 q-12 40 4 66 Z" fill="var(--ill-1)"/><path d="M184 102 q32-60 62-56 q-18 30 -6 56 Z" fill="var(--ill-1)" opacity=".7"/><path d="M236 102 q36-40 60-30 q-24 16 -20 30 Z" fill="var(--ill-3)" opacity=".9"/><rect y="102" width="400" height="7" fill="var(--ill-1)"/><g stroke="var(--ill-2)" stroke-width="5" stroke-linecap="round"><path d="M36 120 h58 M116 120 h58 M196 120 h58 M276 120 h58"/><path d="M36 132 h58 M116 132 h58 M196 132 h58 M276 132 h58"/></g>`),
+  airshow: S(`<circle cx="332" cy="32" r="21" fill="var(--ill-3)" opacity=".32"/><g stroke="var(--ill-2)" stroke-width="6" fill="none" stroke-linecap="round"><path d="M0 38 Q100 28 190 42" opacity=".45"/><path d="M0 60 Q92 52 172 66" opacity=".6"/><path d="M0 84 Q82 78 152 90" opacity=".42"/></g><g fill="var(--ill-1)"><path d="M190 42 l30 8 l-30 8 l8-8 Z"/><path d="M172 66 l30 8 l-30 8 l8-8 Z"/><path d="M152 90 l30 8 l-30 8 l8-8 Z"/></g><rect y="98" width="400" height="8" fill="var(--ill-2)"/><rect y="106" width="400" height="34" fill="var(--ill-1)" opacity=".85"/><g stroke="var(--ill-0)" stroke-width="2.5" fill="none" opacity=".55"><path d="M16 118 q11-5 22 0 t22 0"/><path d="M136 128 q11-5 22 0 t22 0"/><path d="M252 118 q11-5 22 0 t22 0"/><path d="M330 130 q11-5 22 0 t22 0"/></g>`),
+  artfair: S(`<rect x="18" y="16" width="62" height="72" fill="var(--ill-2)" opacity=".45"/><rect x="90" y="32" width="46" height="56" fill="var(--ill-2)" opacity=".35"/><rect x="300" y="22" width="58" height="66" fill="var(--ill-2)" opacity=".45"/><g fill="var(--ill-1)"><path d="M38 88 L76 58 L114 88 Z"/><path d="M150 88 L188 58 L226 88 Z"/><path d="M262 88 L300 58 L338 88 Z"/></g><rect y="88" width="400" height="6" fill="var(--ill-1)"/><g fill="var(--ill-0)" stroke="var(--ill-3)" stroke-width="2.5"><rect x="54" y="100" width="36" height="26"/><rect x="166" y="100" width="36" height="26"/><rect x="278" y="100" width="36" height="26"/></g><rect y="132" width="400" height="8" fill="var(--ill-2)" opacity=".55"/>`),
+  artsdistrict: S(`<rect y="30" width="400" height="11" fill="var(--ill-1)"/><g stroke="var(--ill-1)" stroke-width="7"><path d="M44 41 v66 M124 41 v66 M276 41 v66 M356 41 v66"/></g><rect x="146" y="6" width="118" height="24" rx="4" fill="var(--ill-3)"/><g fill="var(--ill-0)"><rect x="158" y="12" width="19" height="11"/><rect x="186" y="12" width="19" height="11"/><rect x="214" y="12" width="19" height="11"/></g><rect y="108" width="400" height="32" fill="var(--ill-2)" opacity=".45"/><g transform="translate(168,72)"><ellipse cx="32" cy="26" rx="32" ry="23" fill="var(--ill-1)"/><circle cx="41" cy="33" r="7.5" fill="var(--ill-bg)"/><circle cx="19" cy="15" r="4.8" fill="var(--ill-3)"/><circle cx="35" cy="10" r="4.8" fill="var(--ill-0)"/><circle cx="51" cy="17" r="4.8" fill="var(--ill-2)"/></g>`),
+  sangria: S(`<circle cx="66" cy="42" r="27" fill="var(--ill-3)" opacity=".3"/><path d="M142 48 h64 v64 a11 11 0 0 1 -11 11 h-42 a11 11 0 0 1 -11 -11 Z" fill="var(--ill-1)"/><path d="M206 62 q23 6 23 21 t-23 21" stroke="var(--ill-1)" stroke-width="6.5" fill="none"/><rect x="142" y="48" width="64" height="9" fill="var(--ill-2)"/><circle cx="160" cy="82" r="7" fill="var(--ill-3)"/><circle cx="188" cy="98" r="6" fill="var(--ill-0)" opacity=".7"/><path d="M252 46 h58 l-7 34 a22 22 0 0 1 -44 0 Z" fill="var(--ill-3)" opacity=".9"/><path d="M281 100 v20 M263 120 h36" stroke="var(--ill-1)" stroke-width="5.5" stroke-linecap="round"/><circle cx="274" cy="64" r="5" fill="var(--ill-0)" opacity=".85"/>`),
+  blues: S(`<ellipse cx="292" cy="76" rx="45" ry="43" fill="var(--ill-1)"/><ellipse cx="234" cy="76" rx="35" ry="33" fill="var(--ill-1)"/><circle cx="258" cy="76" r="13" fill="var(--ill-bg)"/><rect x="126" y="68" width="112" height="16" fill="var(--ill-2)"/><rect x="96" y="58" width="32" height="36" rx="4" fill="var(--ill-1)"/><g fill="var(--ill-3)"><circle cx="106" cy="66" r="3.6"/><circle cx="118" cy="66" r="3.6"/><circle cx="106" cy="86" r="3.6"/><circle cx="118" cy="86" r="3.6"/></g><g stroke="var(--ill-3)" stroke-width="1.3" opacity=".85"><path d="M128 72 H272 M128 76 H272 M128 80 H272"/></g><g fill="var(--ill-3)"><circle cx="60" cy="112" r="9"/><rect x="67" y="66" width="4" height="46"/><path d="M67 66 q16 4 22 12 v-12 q-6-8 -22-12 Z"/></g>`),
+  bloodymary: S(`<circle cx="86" cy="52" r="24" fill="var(--ill-2)" opacity=".4"/><circle cx="322" cy="66" r="20" fill="var(--ill-2)" opacity=".35"/><path d="M168 46 h64 l-8 82 a9 9 0 0 1 -9 8 h-30 a9 9 0 0 1 -9 -8 Z" fill="var(--ill-3)" opacity=".9"/><rect x="163" y="40" width="74" height="8" rx="3" fill="var(--ill-1)"/><path d="M212 42 q10-24 3-34" stroke="var(--ill-1)" stroke-width="7" fill="none" stroke-linecap="round"/><g fill="var(--ill-1)"><ellipse cx="209" cy="6" rx="9" ry="6" transform="rotate(-24 209 6)"/><ellipse cx="224" cy="10" rx="8" ry="5" transform="rotate(18 224 10)"/></g><path d="M237 44 a15 15 0 0 0 -1 -16 l-1 16 Z" fill="var(--ill-2)"/><path d="M178 68 h44 M176 86 h48" stroke="var(--ill-0)" stroke-width="2" opacity=".3"/>`),
+  summerdance: S(`<path d="M56 140 L108 96 h184 l52 44 Z" fill="var(--ill-2)" opacity=".45"/><g stroke="var(--ill-0)" stroke-width="1.5" opacity=".5"><path d="M108 96 h184 M94 108 h212 M80 122 h240"/></g><path d="M0 18 Q100 44 200 22 T400 26" stroke="var(--ill-1)" stroke-width="2" fill="none"/><g fill="var(--ill-3)"><circle cx="58" cy="33" r="4"/><circle cx="128" cy="38" r="4"/><circle cx="200" cy="22" r="4"/><circle cx="272" cy="29" r="4"/><circle cx="342" cy="33" r="4"/></g><g fill="var(--ill-1)"><circle cx="166" cy="56" r="9.5"/><path d="M166 67 q-15 6 -13 25 l-4 22 h11 l6-18 l6 18 h11 l-4-24 q4-19 -13-23 Z"/><circle cx="224" cy="52" r="9.5"/><path d="M224 63 q15 4 13 23 l9 24 h-42 l15-27 q-6-16 5-20 Z"/></g><path d="M176 76 q24-9 42-5" stroke="var(--ill-3)" stroke-width="3.5" fill="none" stroke-linecap="round"/>`),
+  beach: S(`<circle cx="318" cy="38" r="23" fill="var(--ill-3)" opacity=".5"/><rect y="68" width="400" height="36" fill="var(--ill-1)" opacity=".8"/><g stroke="var(--ill-0)" stroke-width="2.5" fill="none" opacity=".55"><path d="M12 82 q11-5 22 0 t22 0"/><path d="M144 92 q11-5 22 0 t22 0"/><path d="M282 82 q11-5 22 0 t22 0"/></g><path d="M0 104 q100-12 200 0 t200 0 V140 H0 Z" fill="var(--ill-2)"/><g stroke="var(--ill-1)" stroke-width="2.5" fill="none" stroke-linecap="round"><path d="M52 134 q-5-17 -15-24 M52 134 q2-17 11-25 M52 134 q9-13 22-15"/><path d="M342 132 q-5-15 -13-21 M342 132 q4-15 12-21"/></g>`),
+  lake: S(`<path d="M0 82 q62-36 124-10 q52-30 112-6 q60-24 164 14 V140 H0 Z" fill="var(--ill-2)" opacity=".5"/><rect y="92" width="400" height="48" fill="var(--ill-1)" opacity=".82"/><path d="M204 88 V22 l46 58 Z" fill="var(--ill-0)"/><path d="M197 88 V32 l-32 56 Z" fill="var(--ill-3)"/><path d="M148 88 h112 l-17 17 h-78 Z" fill="var(--ill-1)"/><g stroke="var(--ill-0)" stroke-width="2.5" fill="none" opacity=".5"><path d="M26 116 q11-5 22 0 t22 0"/><path d="M292 110 q11-5 22 0 t22 0"/><path d="M62 130 q11-5 22 0 t22 0"/></g>`),
+  canyon: S(`<path d="M0 0 h148 l-18 40 l14 34 l-22 40 l10 26 H0 Z" fill="var(--ill-1)"/><path d="M400 0 h-142 l16 44 l-12 32 l20 38 l-8 26 H400 Z" fill="var(--ill-1)" opacity=".82"/><g stroke="var(--ill-0)" stroke-width="2" opacity=".22"><path d="M0 34 h134 M0 74 h144 M266 42 h134 M272 78 h128"/></g><rect x="186" y="4" width="28" height="100" fill="var(--ill-2)" opacity=".85"/><g stroke="var(--ill-0)" stroke-width="2" opacity=".5"><path d="M194 8 v96 M206 8 v96"/></g><ellipse cx="200" cy="112" rx="54" ry="14" fill="var(--ill-2)"/><ellipse cx="200" cy="109" rx="28" ry="7" fill="var(--ill-0)" opacity=".45"/><rect y="126" width="400" height="14" fill="var(--ill-1)" opacity=".45"/>`),
+  hilltown: S(`<path d="M0 68 q70-36 140-10 q70-32 140-6 q60 18 120 6 V140 H0 Z" fill="var(--ill-2)" opacity=".4"/><g fill="var(--ill-1)"><rect x="28" y="72" width="46" height="52"/><path d="M28 72 h46 l-23-18 Z"/><rect x="82" y="60" width="52" height="64"/><rect x="142" y="78" width="44" height="46"/><path d="M142 78 h44 l-22-16 Z"/><rect x="194" y="66" width="56" height="58"/><rect x="258" y="80" width="42" height="44"/><path d="M258 80 h42 l-21-16 Z"/><rect x="308" y="70" width="52" height="54"/></g><rect x="194" y="46" width="56" height="20" fill="var(--ill-3)"/><g fill="var(--ill-0)" opacity=".85"><rect x="40" y="84" width="10" height="13"/><rect x="56" y="84" width="10" height="13"/><rect x="94" y="72" width="12" height="14"/><rect x="112" y="72" width="12" height="14"/><rect x="94" y="96" width="12" height="14"/><rect x="112" y="96" width="12" height="14"/><rect x="208" y="78" width="12" height="14"/><rect x="228" y="78" width="12" height="14"/><rect x="208" y="100" width="12" height="14"/><rect x="228" y="100" width="12" height="14"/><rect x="320" y="82" width="12" height="14"/><rect x="338" y="82" width="12" height="14"/></g><rect y="124" width="400" height="16" fill="var(--ill-1)" opacity=".5"/>`),
+  coast: S(`<rect y="94" width="400" height="46" fill="var(--ill-1)" opacity=".82"/><path d="M108 30 L246 10 L246 58 Z" fill="var(--ill-3)" opacity=".22"/><path d="M0 94 q42-16 86-6 q42-18 96-4 V140 H0 Z" fill="var(--ill-2)" opacity=".55"/><g transform="translate(94,0)"><path d="M-17 94 l6-58 h22 l6 58 Z" fill="var(--ill-0)"/><g stroke="var(--ill-3)" stroke-width="6"><path d="M-13 64 h26 M-15 80 h30"/></g><rect x="-11" y="22" width="22" height="16" fill="var(--ill-1)"/><path d="M-15 22 h30 l-7-9 h-16 Z" fill="var(--ill-3)"/></g><g stroke="var(--ill-0)" stroke-width="2.5" fill="none" opacity=".5"><path d="M204 116 q11-5 22 0 t22 0"/><path d="M292 128 q11-5 22 0 t22 0"/><path d="M244 104 q11-5 22 0 t22 0"/></g><g transform="translate(336,56)"><circle cx="0" cy="14" r="9" fill="var(--ill-3)"/><circle cx="19" cy="19" r="9" fill="var(--ill-3)"/><path d="M0 5 q4-15 15-17 M19 10 q-1-13 -5-22" stroke="var(--ill-1)" stroke-width="2.5" fill="none"/></g>`)
+};
+
+/* ---------- data ---------- */
+const TODAY = [
+  { art:"baseball", cat:"sports", time:"18:40", ja:"ホワイトソックス vs レッズ", en:"Chicago White Sox vs Cincinnati Reds",
+    what:"MLB 野球のナイトゲーム", venue:"Rate Field · 333 W 35th St", price:"$40〜", dur:"約3時間",
+    lead:"シカゴには2つのMLB球団があり、こちらはサウスサイドを本拠地とするホワイトソックス。相手はシンシナティ・レッズ。夏の平日ナイターは比較的チケットが取りやすく、仕事帰りにふらっと寄れる。",
+    meta:{ "日時":"8/11 (火) 18:40 開始", "場所":"Rate Field（旧 Guaranteed Rate Field）", "料金":"最安 $40前後〜（席種・購入時期で大きく変動）", "行き方":"CTA Red Line「Sox–35th」駅、または Green Line「35th–Bronzeville–IIT」駅" },
+    tips:"Red Line の Sox–35th 駅は球場のほぼ真横で、改札を出たら歩道橋ですぐ。運転より断然ラク。7回裏の「Take Me Out to the Ball Game」の大合唱はシカゴ名物なので、そこまでは残る価値あり。",
+    link:"https://www.mlb.com/whitesox/schedule" },
+
+  { art:"arena", cat:"music", time:"20:00", ja:"J. Cole", en:"J. Cole — The Fall-Off Tour",
+    what:"ヒップホップ／アメリカを代表するラッパーのアリーナ公演", venue:"United Center · 1901 W Madison St", price:"$57〜", dur:"約2.5時間",
+    lead:"ノースカロライナ出身のラッパー J. Cole の「The Fall-Off Tour」。グラミー受賞歴もある、2010年代以降のUSヒップホップを代表する一人。会場はブルズとブラックホークスの本拠地でもあるシカゴ最大級のアリーナ。8/11・8/12 の2公演。",
+    meta:{ "日時":"8/11 (火) 20:00 開演（翌8/12も公演あり）", "場所":"United Center", "料金":"最安 $57前後〜（平均は$300超のことも）", "行き方":"CTA #20 Madison バスが正面に停車。Blue Line「UIC–Halsted」から徒歩約20分" },
+    tips:"終演直後のMadison通りのバス停は大混雑する。少し東（ダウンタウン方向）へ歩いてから乗るか、配車アプリは会場から数ブロック離れた場所で拾うのが早い。周辺は夜に人通りが少ないエリアもあるので、明るい大通り沿いを歩くこと。",
+    link:"https://www.unitedcenter.com/events/" },
+
+  { art:"ravinia", cat:"music", time:"夜", ja:"Ravinia: グラディス・ナイト / ブライアン・マックナイト", en:"Ravinia Festival — Gladys Knight & Brian McKnight",
+    what:"ソウル／R&B の野外コンサート。芝生でピクニックしながら聴く", venue:"Ravinia Festival · Highland Park（北郊）", price:"芝生 $110前後", dur:"約3時間 + 移動",
+    lead:"シカゴ北郊にある全米最古級の野外音楽フェス会場。グラディス・ナイトは「ソウルの女帝」と呼ばれるレジェンド歌手、ブライアン・マックナイトは90年代R&Bの代表的シンガー。芝生席にブランケットを敷いてピクニックしながら聴くのが伝統的な楽しみ方。",
+    meta:{ "日時":"8/11 (火) 夜公演", "場所":"Ravinia Festival, Highland Park", "料金":"芝生席（自由席）$110前後。公演1週間前に値上がりすることがある", "行き方":"Metra Union Pacific North線「Ravinia Park」駅。公演日のみ停車する専用駅" },
+    tips:"芝生席は食べ物・飲み物の持ち込みOK。ローチェアとブランケット、虫除けを持参するのが現地流。Metraの専用駅は会場の目の前に着くので、渋滞と駐車場待ちを避けられる。シーズンは9/19まで続くので、他の公演も狙える。",
+    link:"https://www.ravinia.org/events" }
+];
+
+const NOW = [
+  { art:"orchestra", cat:"music", time:"〜8/15", ja:"グラント・パーク音楽祭", en:"Grant Park Music Festival", soon:true,
+    what:"無料の野外クラシックコンサート。今季は8/15で閉幕", venue:"Jay Pritzker Pavilion, Millennium Park", price:"無料", dur:"約1.5時間",
+    lead:"ミレニアム・パークの野外音楽堂で開かれる、全米で唯一の無料野外クラシック音楽祭。1935年から続くシカゴの夏の象徴で、専属のオーケストラと合唱団を持つ。今季は8/15で閉幕。",
+    meta:{ "日時":"6/10〜8/15。水・金・土 18:30–20:00", "残り公演":"8/12(水)・8/14(金)・8/15(土) の3回のみ", "場所":"Jay Pritzker Pavilion", "料金":"無料（芝生席・座席後方半分）／前方指定席のみ有料", "行き方":"CTA Red/Blue Line「Monroe」「Washington」、Metra「Millennium Station」" },
+    tips:"無料席は先着順。人気公演は開演1時間前には芝生が埋まり始めるので早めに。ブランケットか折り畳み椅子を持参すれば、フランク・ゲーリー設計の音響システムで芝生の後方からでもしっかり聴こえる。今季あと3回なので、行くなら今週。",
+    link:"https://www.grantparkmusicfestival.com/" },
+
+  { art:"summerdance", cat:"dance", time:"〜8/29", ja:"シカゴ・サマーダンス", en:"Chicago SummerDance",
+    what:"無料のダンスレッスン＋生演奏。初心者・一人参加OK", venue:"Spirit of Music Garden (Grant Park) ほか市内各公園", price:"無料", dur:"約2時間",
+    lead:"屋外ダンスフロアでプロの無料レッスンを受けてから、生演奏で実際に踊るという市主催のプログラム。サルサ、スイング、タンゴ、クンビアなど30以上のスタイルが日替わりで登場する。",
+    meta:{ "日時":"7/15〜8/29", "場所":"Grant Park の Spirit of Music Garden ほか、市内各公園", "料金":"無料", "行き方":"Spirit of Music Garden は Grant Park内（601 S Michigan Ave 付近）" },
+    tips:"毎回まずインストラクターによる初心者向けレッスンから始まるので、踊れなくても飛び込みで参加できる。ひとりで来ている人も多く、パートナー不要。日によって場所とダンススタイルが変わるので、事前に公式サイトで確認を。",
+    link:"https://www.choosechicago.com/articles/festivals-special-events/chicago-summerdance/" }
+];
+
+const WEEKEND = [
+  { art:"airshow", cat:"air", time:"SAT–SUN", ja:"シカゴ・エア＆ウォーターショー", en:"Chicago Air and Water Show", pick:true,
+    what:"戦闘機の編隊飛行ショー。全米最大級・完全無料", venue:"North Avenue Beach（Fullerton〜Oak St の湖岸）", price:"無料", dur:"2〜4時間",
+    lead:"全米最大規模の無料エアショー。ブルーエンジェルスなどの編隊飛行がミシガン湖の上空を飛ぶ。湖岸のどこからでも無料で見られる、シカゴの夏で最大のイベント。",
+    meta:{ "日時":"8/15(土)・8/16(日) 10:30–15:00", "リハーサル":"8/14(金) も本番とほぼ同内容で飛ぶ", "場所":"North Avenue Beach が中心。Fullerton〜Oak St の湖岸なら広く見える", "料金":"無料", "行き方":"North Ave Beach に駐車場なし。CTA推奨（#151, #22 など湖岸方面バス）" },
+    tips:"North Avenue Beach の中心部は午前中で埋まる。北の Fullerton 側や南の Oak Street Beach は比較的空いていて、同じ空が見える。混雑を避けるなら金曜のリハーサル日が最大の穴場 — ほぼ同じ内容を人混みなしで見られる。日陰がないので日焼け止めと水は必須。",
+    link:"https://www.choosechicago.com/articles/festivals-special-events/chicago-air-water-show/" },
+
+  { art:"artfair", cat:"art", time:"10:00〜", ja:"プリンターズ・ロウ・アートフェス", en:"Printer's Row Art Fest",
+    what:"屋外アートフェア。全米から95組が出展", venue:"Dearborn St（Polk 〜 Harrison）", price:"無料", dur:"1〜2時間",
+    lead:"かつて印刷業で栄えたプリンターズ・ロウ地区の通りを歩行者天国にして開かれるアートフェア。全米から審査を通過した95組のアーティストが出展する。",
+    meta:{ "日時":"8/15(土)・8/16(日) 10:00〜", "場所":"Dearborn Street の Polk〜Harrison 間", "料金":"入場無料", "行き方":"CTA Red Line「Harrison」駅、Metra「LaSalle Street Station」" },
+    tips:"絵画、ストリートアート、ジュエリー、写真、彫刻、木工など幅広い。周辺のレストランやバーも通りに出店するので、食事と組み合わせてぶらぶらするのに向いている。ダウンタウン南端なので、ループから歩いて行ける距離。",
+    link:"https://www.eventbrite.com/e/printers-row-art-fest-tickets-1991779050758" },
+
+  { art:"artsdistrict", cat:"art", time:"FRI–SUN", ja:"グレンウッド・アベニュー・アートフェス", en:"Glenwood Avenue Arts Festival — 25th",
+    what:"街のアートフェス。25周年・アーティスト130組超", venue:"Morse Ave × Glenwood Ave, Rogers Park", price:"無料", dur:"2〜3時間",
+    lead:"ロジャーズ・パークのアート地区で開かれる、今年で25周年のコミュニティフェス。130組以上のアーティスト、20以上の音楽・ダンスパフォーマンス、オープンスタジオが集まる。",
+    meta:{ "日時":"8/14(金) 18:00–22:00 ／ 8/15(土) 11:00–21:00 ／ 8/16(日) 11:00–19:00", "場所":"Glenwood Avenue Arts District（Morse Ave と Glenwood Ave の交差点周辺）", "料金":"無料", "行き方":"CTA Red Line「Morse」駅を降りてすぐ。高架のすぐ下が会場" },
+    tips:"Red Line 一本で行けて駅を出たら会場、という気軽さが最大の強み。アーティストのスタジオを直接開放する「オープンスタジオ」があるのがこのフェスの特徴で、制作現場を覗ける。キッズエリアもあるので家族連れでも。",
+    link:"https://www.glenwoodave.org/" },
+
+  { art:"sangria", cat:"food", time:"12:00〜", ja:"サングリア・フェスティバル", en:"Sangria Festival Chicago",
+    what:"サングリア＆ラテン料理の屋外フード フェス", venue:"Humboldt Park · 2701 W Division St", price:"$10〜20", dur:"2〜3時間",
+    lead:"プエルトリコ系コミュニティの中心地フンボルト・パークで開かれる、サングリアとラテン料理のフェス。生演奏とダンスもあり、屋外で一日中飲み食いする陽気なイベント。今年で9回目。",
+    meta:{ "日時":"8/15(土)・8/16(日) 12:00〜", "場所":"2701 W Division St, Humboldt Park", "料金":"寄付制 $10 目安（前売り $20〜の案内もあり）", "注意":"17歳以下は21歳以上の同伴が必要" },
+    tips:"フンボルト・パークの Division Street はプエルトリコ料理の名店が集まるエリア。フェスのついでに周辺の店も回ると楽しい。ダウンタウンからは Blue Line「Division」駅からバス、または配車アプリが現実的。",
+    link:"https://www.humboldtparkportal.org/event/sangria-festival/" },
+
+  { art:"blues", cat:"music", time:"SAT–SUN", ja:"ウィロー・フェス／ブルース・デイ", en:"Willow Fest — Blues Day",
+    what:"郊外の町祭り＋ブルースのライブ。カーニバルの乗り物もあり", venue:"1 Village Circle, Willow Springs, IL", price:"一部有料", dur:"2〜3時間",
+    lead:"シカゴ南西郊外ウィロースプリングスの町祭り。かつて独立していたブルースフェスが統合され、Windy City Blues Society による「ブルース・デイ」が週末に組み込まれている。",
+    meta:{ "日時":"フェス全体は 8/13(木)〜8/16(日)。ブルースは 8/15・8/16", "場所":"1 Village Circle, Willow Springs, IL", "料金":"一部有料（公式サイトで要確認）", "行き方":"車で約40分。Metra Heritage Corridor線もあるが本数が少ない" },
+    tips:"カーニバルの乗り物やフードベンダーもある、いかにもアメリカの郊外の町祭りという雰囲気。シカゴ市内のフェスとは客層も空気感も違うので、「アメリカの地元のお祭り」を体験したいときに向いている。車があるなら行きやすい。",
+    link:"https://windycityblues.org/willow-springs-blues-fest" },
+
+  { art:"bloodymary", cat:"food", time:"10:00–17:00", ja:"ブラッディ・マリー・フェス", en:"Highwood Bloody Mary Fest",
+    what:"ブラッディマリーの飲み比べ大会。16回目", venue:"Everts Park · 111 North Ave, Highwood, IL", price:"要確認", dur:"2〜3時間",
+    lead:"シカゴ北郊ハイウッドで16年続くブラッディ・マリーの祭典。出店者が最高の一杯を競い、「Proud Mary Award」をかけて勝負する。日曜の昼から飲むのが正しい参加の仕方。",
+    meta:{ "日時":"8/16(日) 10:00–17:00", "場所":"Everts Park, 111 North Ave, Highwood, IL", "料金":"公式サイトに記載なし（要確認）", "行き方":"Metra Union Pacific North線「Highwood」駅。車なら約45分" },
+    tips:"ハイウッドは Ravinia のすぐ隣町。同じ Metra UP-N 線上なので、ラヴィニアの公演と組み合わせて北郊外を一日楽しむプランが組める。飲むイベントなのでMetraで行くのが安全。",
+    link:"https://www.celebratehighwood.org/bloody-mary-fest/" }
+];
+
+const TRIPS = [
+  { art:"beach", cat:"nature", dist:"70 MI · 車で1時間15分", ja:"New Buffalo, MI", en:"New Buffalo, Michigan", stay:"日帰り〜1泊",
+    short:"ミシガン湖東岸のビーチタウン。シカゴから最も近い「海辺」。", price:"ガソリン代のみ", dur:"日帰り〜1泊",
+    lead:"ミシガン湖の東岸、通称「ハーバー・カントリー」の中心となる小さな町。シカゴから最も近い本格的な砂浜があり、湖畔のワイナリーとのんびりした空気が目当ての定番の逃避先。",
+    meta:{ "距離":"約70マイル / 車で1時間15分", "向いている人":"とにかく水辺でゆっくりしたい人", "費用":"ガソリン代＋宿泊費。入場料などは不要", "ベストシーズン":"6月〜9月" },
+    tips:"ミシガン州は東部時間なので、シカゴより1時間進む。到着・帰宅時間の計算に注意。夏の週末は宿が早く埋まるので予約は早めに。湖に沈む夕日が見られるのは、シカゴ側ではなくこちら側（東岸）だけ。",
+    link:"https://www.harborcountry.org/" },
+
+  { art:"lake", cat:"nature", dist:"83 MI · 車で1時間30分", ja:"Lake Geneva, WI", en:"Lake Geneva, Wisconsin", stay:"日帰り〜1泊",
+    short:"湖上ボートと湖畔一周の遊歩道。リゾート然とした避暑地。", price:"遊覧船 $40前後", dur:"日帰り〜1泊",
+    lead:"19世紀からシカゴの富裕層の避暑地だった湖畔リゾート。湖を一周する約21マイルの遊歩道「Shore Path」は、歴史的な邸宅の敷地内を通り抜けるという独特の造りになっている。",
+    meta:{ "距離":"約83マイル / 車で1時間30分", "向いている人":"歩きたい人、ボートに乗りたい人", "費用":"遊歩道は無料。遊覧船は $40前後（要確認）", "名物":"Shore Path（湖畔一周の遊歩道）、遊覧船" },
+    tips:"Shore Path は法律上、私有地でも通行が認められている歴史的な小道。全部歩くと丸一日かかるので、一部区間だけ歩いて戻るのが現実的。冬にはアイスキャッスルなどのイベントもあり、夏以外も行ける。",
+    link:"https://www.visitlakegeneva.com/" },
+
+  { art:"canyon", cat:"nature", dist:"~95 MI · 車で1時間30分", ja:"Starved Rock State Park", en:"Starved Rock State Park, Illinois", stay:"日帰り",
+    short:"18の峡谷と季節の滝。イリノイで一番人気の州立公園。", price:"入園無料", dur:"日帰り（4〜5時間）",
+    lead:"イリノイ川沿いの砂岩が削られてできた18の峡谷（キャニオン）と、そこにかかる滝が見どころ。平地の多いイリノイ州で唯一といっていい本格的な地形が楽しめる場所で、州内で最も来訪者の多い州立公園。",
+    meta:{ "距離":"約95マイル / 車で1時間30分", "向いている人":"歩きたい人、自然が恋しくなった人", "費用":"入園・駐車ともに無料", "所要":"日帰りで十分。主要な峡谷を回って4〜5時間" },
+    tips:"週末は午前中に駐車場が満車になる。朝8時台の到着を目標に。滝は雨のあとや雪解けの時期が最も水量が多く、真夏の乾いた時期は枯れていることもある。ハイキング用の靴推奨 — 木の階段と滑りやすい岩が多い。",
+    link:"https://dnr.illinois.gov/parks/park.starvedrock.html" },
+
+  { art:"hilltown", cat:"town", dist:"165 MI · 車で2時間45分", ja:"Galena, IL", en:"Galena, Illinois", stay:"1泊",
+    short:"19世紀の街並みが残る丘の町。Main Streetを歩くだけで完結。", price:"街歩きは無料", dur:"1泊2日",
+    lead:"鉛鉱山で栄えた19世紀の建物が街ごとそのまま残っている、イリノイ州北西端の丘の町。町の85%以上が国家歴史登録地区に指定されている。Main Street沿いに店とレストランが集中していて、車を停めたらあとは歩くだけ。",
+    meta:{ "距離":"約165マイル / 車で2時間45分", "向いている人":"歩いて町を眺めたい人、古い建物が好きな人", "費用":"街歩き自体は無料。宿泊費と飲食代のみ", "所要":"1泊2日がちょうどいい" },
+    tips:"町の中心部は歩いて回りきれるコンパクトさなので、駐車したら車は使わない。周辺には丘陵地帯が広がっていてワイナリーも点在する。紅葉の季節（10月）は夏以上に人気なので、その時期に再訪する価値もある。",
+    link:"https://www.visitgalena.org/" },
+
+  { art:"coast", cat:"nature", dist:"280 MI · 車で4時間30分", ja:"Door County, WI", en:"Door County, Wisconsin", stay:"2泊以上",
+    short:"300マイル超の湖岸線、灯台、チェリー農園。本格リゾート。", price:"宿泊費が中心", dur:"2泊以上",
+    lead:"ミシガン湖に細長く突き出した半島で、300マイル以上の湖岸線に11の灯台と小さな港町が点在する。「中西部のケープコッド」とも呼ばれる、この地域で最も本格的なリゾートエリア。チェリーの産地としても有名。",
+    meta:{ "距離":"約280マイル / 車で4時間30分", "向いている人":"腰を据えて休みたい人", "費用":"宿泊費が中心。夏の週末はかなり高くなる", "所要":"片道4時間半なので最低2泊は必要" },
+    tips:"夏の週末の宿は数ヶ月前から埋まるので、行くと決めたらまず宿を押さえること。名物の「フィッシュボイル」（屋外の大釜で魚を茹でる伝統料理のショー）は一度は見る価値あり。7月のチェリー狩りシーズンも人気。",
+    link:"https://www.doorcounty.com/" }
+];
+
+/* ---------- render ---------- */
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const STORE = [];
+const priceClass = (p) => p === "無料" ? "price is-free" : (/^(要確認|一部有料|ガソリン代のみ|入園無料|街歩きは無料|宿泊費が中心)$/.test(p) ? "price is-tbd" : "price");
+
+function rowHTML(e, i) {
+  return `<button class="row" type="button" data-i="${i}" aria-haspopup="dialog">
+    <span class="time">${esc(e.time)}</span>
+    <span class="row-main">
+      <span class="chips">${e.pick ? pickHTML : ""}${catHTML(e.cat)}${e.soon ? '<span class="cat" style="--cat:var(--warn);--cat-bg:var(--warn-soft)">今季ラスト</span>' : ""}</span>
+      <h3>${esc(e.ja)}</h3>
+      <span class="what">${esc(e.what)}</span>
+      <span class="venue">${esc(e.venue)}</span>
+    </span>
+    <span class="row-end">
+      <span class="${priceClass(e.price)}">${esc(e.price)}</span>
+      <span class="dur">${esc(e.dur)}</span>
+    </span>
+    <span class="chev" aria-hidden="true">›</span>
+  </button>`;
+}
+function ticketHTML(t, i) {
+  return `<button class="ticket" type="button" data-i="${i}" aria-haspopup="dialog">
+    <span class="dist">${esc(t.dist)}</span>
+    ${catHTML(t.cat)}
+    <h3>${esc(t.ja)}</h3>
+    <p>${esc(t.short)}</p>
+    <span class="t-foot"><span class="${priceClass(t.price)}" style="font-size:13px">${esc(t.price)}</span><span class="t-stay">${esc(t.stay)}</span></span>
+  </button>`;
+}
+function mount(el, items, tpl) {
+  el.innerHTML = items.map(it => { STORE.push(it); return tpl(it, STORE.length - 1); }).join("");
+}
+mount(document.getElementById("today-list"), TODAY, rowHTML);
+mount(document.getElementById("now-list"), NOW, rowHTML);
+mount(document.getElementById("wk-list"), WEEKEND, rowHTML);
+mount(document.getElementById("trip-list"), TRIPS, ticketHTML);
+
+/* ---------- dialog ---------- */
+const dlg = document.getElementById("detail");
+function open(i) {
+  const e = STORE[i];
+  document.getElementById("d-ill-slot").innerHTML = ART[e.art] || "";
+  document.getElementById("d-chips").innerHTML =
+    (e.pick ? pickHTML : "") + catHTML(e.cat) +
+    (e.soon ? '<span class="cat" style="--cat:var(--warn);--cat-bg:var(--warn-soft)">今季ラスト</span>' : "");
+  document.getElementById("d-title").textContent = e.ja;
+  document.getElementById("d-en").textContent = e.en || "";
+  document.getElementById("d-headline").innerHTML =
+    `<span class="d-hl"><span class="d-hl-k">料金の目安</span><span class="d-hl-v ${e.price === '無料' ? 'is-free' : ''}" style="${e.price === '無料' ? 'color:var(--good)' : ''}">${esc(e.price)}</span></span>
+     <span class="d-hl"><span class="d-hl-k">所要時間の目安</span><span class="d-hl-v">${esc(e.dur)}</span></span>`;
+  document.getElementById("d-lead").textContent = e.lead;
+  document.getElementById("d-meta").innerHTML =
+    Object.entries(e.meta).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+  document.getElementById("d-tips").textContent = e.tips;
+  document.getElementById("d-link").href = e.link;
+  dlg.querySelector(".d-scroll").scrollTop = 0;
+  dlg.showModal();
+}
+document.addEventListener("click", (ev) => {
+  const btn = ev.target.closest("button.row, button.ticket");
+  if (btn) { open(Number(btn.dataset.i)); return; }
+  if (ev.target.closest(".d-close")) { dlg.close(); return; }
+  if (ev.target === dlg) dlg.close();
+});
+</script>
