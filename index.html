@@ -1,3 +1,7 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="シカゴのイベント情報を毎朝更新。今週・来週の予定と、誰が行くかを共有できます。">
+<meta name="theme-color" content="#1C4E80">
 <title>Chicago Dashboard</title>
 <style>
   /* ---------- tokens (light only — 白ベース固定) ---------- */
@@ -191,6 +195,38 @@
   .btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
   .me-hint { font-size: 12.5px; color: var(--ink-faint); }
 
+  /* ---------- map ---------- */
+  .map-wrap { display: grid; grid-template-columns: 340px 1fr; gap: 0; border: 1px solid var(--line); background: var(--surface); margin-top: 26px; }
+  @media (max-width: 780px) { .map-wrap { grid-template-columns: 1fr; } }
+  .map-pane { position: relative; background: linear-gradient(170deg, #F2F6F8 0%, #E8EFF3 100%); border-right: 1px solid var(--line); }
+  @media (max-width: 780px) { .map-pane { border-right: none; border-bottom: 1px solid var(--line); } }
+  .map-pane svg { display: block; width: 100%; height: auto; }
+  .pin { cursor: pointer; }
+  .pin-dot { transition: r .15s ease, fill .15s ease; }
+  .pin:hover .pin-dot, .pin.is-active .pin-dot { fill: var(--flag-red); }
+  .pin:hover .pin-ring, .pin.is-active .pin-ring { opacity: 1; }
+  .pin-ring { opacity: 0; transition: opacity .15s ease; }
+  .pin-label { font-family: var(--font-mono); font-size: 8.5px; fill: var(--ink-soft); pointer-events: none; }
+  .pin-n { font-family: var(--font-mono); font-size: 8px; font-weight: 700; fill: #fff; pointer-events: none; }
+  .map-side { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .map-side h3 { font-family: var(--font-display); font-size: 15px; text-transform: uppercase; letter-spacing: .07em; margin: 0; }
+  .map-help { font-size: 13px; color: var(--ink-faint); margin: 0; }
+  .place-list { display: flex; flex-direction: column; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .place-row {
+    appearance: none; font: inherit; text-align: left; cursor: pointer; background: var(--surface);
+    border: none; padding: 8px 11px; display: flex; align-items: center; gap: 9px;
+  }
+  .place-row:hover, .place-row.is-active { background: var(--accent-soft); }
+  .place-num { font-family: var(--font-mono); font-size: 10px; font-weight: 700; background: var(--accent); color: #fff; width: 18px; height: 18px; display: grid; place-items: center; flex-shrink: 0; }
+  .place-row.is-suburb .place-num { background: var(--ink-faint); }
+  .place-ja { font-size: 13.5px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .place-cnt { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); flex-shrink: 0; }
+  .map-events { border-top: 1px solid var(--line); padding-top: 12px; }
+  .map-events h4 { font-family: var(--font-display); font-size: 14px; margin: 0 0 8px; }
+  .map-ev { appearance: none; background: none; border: none; font: inherit; text-align: left; cursor: pointer; display: block; width: 100%; padding: 5px 0; font-size: 13.5px; color: var(--accent); }
+  .map-ev:hover { text-decoration: underline; }
+  .map-ev .mev-t { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); margin-right: 7px; }
+
   /* ---------- filters ---------- */
   .filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 26px 0 -4px; }
   .f-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-right: 2px; }
@@ -261,6 +297,19 @@
       <span class="me-hint" id="me-hint"></span>
     </div>
   </header>
+
+  <div class="map-wrap">
+    <div class="map-pane" id="map-pane"></div>
+    <div class="map-side">
+      <h3>会場マップ</h3>
+      <p class="map-help">番号を押すと、その場所のイベントが下に出ます。</p>
+      <div class="place-list" id="place-list"></div>
+      <div class="map-events" id="map-events" hidden>
+        <h4 id="map-ev-title"></h4>
+        <div id="map-ev-list"></div>
+      </div>
+    </div>
+  </div>
 
   <div class="filters" id="filters">
     <span class="f-label">絞り込み</span>
@@ -372,25 +421,25 @@ const ART = {
 /* ---------- data ---------- */
 const WEEK = [
   { day:"8/11", dow:"TUE", today:true, items:[
-    { id:"8-11-millennium-park-summer-film-series", resv:"free", art:"cinema", cat:"art", time:"18:30", ja:"野外映画『プラダを着た悪魔』", en:"Millennium Park Summer Film Series — The Devil Wears Prada",
+    { place:"millennium", id:"8-11-millennium-park-summer-film-series", resv:"free", art:"cinema", cat:"art", time:"18:30", ja:"野外映画『プラダを着た悪魔』", en:"Millennium Park Summer Film Series — The Devil Wears Prada",
       what:"公開20周年記念の無料野外上映", venue:"Jay Pritzker Pavilion, Millennium Park", price:"無料", dur:"約2時間",
       lead:"ミレニアム・パークの野外音楽堂で毎週火曜に開かれる無料映画シリーズ。今夜は『プラダを着た悪魔』の公開20周年記念上映。芝生にブランケットを敷いて、シカゴの摩天楼を背景に映画を観るという、この街ならではの夏の夜の過ごし方。",
       meta:{ "日時":"8/11 (火) 18:30 開始", "場所":"Jay Pritzker Pavilion, Millennium Park", "料金":"無料・予約不要", "行き方":"CTA Red/Blue Line「Monroe」「Washington」、Metra「Millennium Station」" },
       tips:"食べ物・飲み物の持ち込みが可能なので、ダウンタウンで買って持ち込むのが定番。日没後は湖からの風で急に冷えるので、8月でも羽織るものがあると安心。芝生席は先着順、開始1時間前くらいから埋まり始める。シリーズは8/18の『Sinners』が今季最終回。",
       link:"https://www.chicago.gov/city/en/depts/dca/supp_info/millennium_park_film_series.html" },
-    { id:"8-11-chicago-white-sox-vs-cincinnati-reds", resv:"buy", art:"baseball", cat:"sports", time:"18:40", ja:"ホワイトソックス vs レッズ", en:"Chicago White Sox vs Cincinnati Reds",
+    { place:"ratefield", id:"8-11-chicago-white-sox-vs-cincinnati-reds", resv:"buy", art:"baseball", cat:"sports", time:"18:40", ja:"ホワイトソックス vs レッズ", en:"Chicago White Sox vs Cincinnati Reds",
       what:"MLB 野球のナイトゲーム", venue:"Rate Field · 333 W 35th St", price:"$40〜", dur:"約3時間",
       lead:"シカゴには2つのMLB球団があり、こちらはサウスサイドを本拠地とするホワイトソックス。相手はシンシナティ・レッズ。夏の平日ナイターは比較的チケットが取りやすく、仕事帰りにふらっと寄れる。",
       meta:{ "日時":"8/11 (火) 18:40 開始", "場所":"Rate Field（旧 Guaranteed Rate Field）", "料金":"最安 $40前後〜（席種・購入時期で大きく変動）", "行き方":"CTA Red Line「Sox–35th」駅、または Green Line「35th–Bronzeville–IIT」駅" },
       tips:"Red Line の Sox–35th 駅は球場のほぼ真横で、改札を出たら歩道橋ですぐ。運転より断然ラク。7回裏の「Take Me Out to the Ball Game」の大合唱はシカゴ名物なので、そこまでは残る価値あり。",
       link:"https://www.mlb.com/whitesox/schedule" },
-    { id:"8-11-j-cole", resv:"buy", art:"arena", cat:"music", time:"20:00", ja:"J. Cole", en:"J. Cole — The Fall-Off Tour",
+    { place:"unitedcenter", id:"8-11-j-cole", resv:"buy", art:"arena", cat:"music", time:"20:00", ja:"J. Cole", en:"J. Cole — The Fall-Off Tour",
       what:"ヒップホップ／アメリカを代表するラッパーのアリーナ公演", venue:"United Center · 1901 W Madison St", price:"$57〜", dur:"約2.5時間",
       lead:"ノースカロライナ出身のラッパー J. Cole の「The Fall-Off Tour」。グラミー受賞歴もある、2010年代以降のUSヒップホップを代表する一人。会場はブルズとブラックホークスの本拠地でもあるシカゴ最大級のアリーナ。8/11・8/12 の2公演。",
       meta:{ "日時":"8/11 (火) 20:00 開演（翌8/12も公演あり）", "場所":"United Center", "料金":"最安 $57前後〜（平均は$300超のことも）", "行き方":"CTA #20 Madison バスが正面に停車。Blue Line「UIC–Halsted」から徒歩約20分" },
       tips:"終演直後のMadison通りのバス停は大混雑する。少し東（ダウンタウン方向）へ歩いてから乗るか、配車アプリは会場から数ブロック離れた場所で拾うのが早い。周辺は夜に人通りが少ないエリアもあるので、明るい大通り沿いを歩くこと。",
       link:"https://www.unitedcenter.com/events/" },
-    { id:"8-11-ravinia-festival", resv:"buy", art:"ravinia", cat:"music", time:"夜", ja:"Ravinia: グラディス・ナイト / ブライアン・マックナイト", en:"Ravinia Festival — Gladys Knight & Brian McKnight",
+    { place:"ravinia", id:"8-11-ravinia-festival", resv:"buy", art:"ravinia", cat:"music", time:"夜", ja:"Ravinia: グラディス・ナイト / ブライアン・マックナイト", en:"Ravinia Festival — Gladys Knight & Brian McKnight",
       what:"ソウル／R&B の野外コンサート。芝生でピクニックしながら聴く", venue:"Ravinia Festival · Highland Park（北郊）", price:"芝生 $110前後", dur:"約3時間 + 移動",
       lead:"シカゴ北郊にある全米最古級の野外音楽フェス会場。グラディス・ナイトは「ソウルの女帝」と呼ばれるレジェンド歌手、ブライアン・マックナイトは90年代R&Bの代表的シンガー。芝生席にブランケットを敷いてピクニックしながら聴くのが伝統的な楽しみ方。",
       meta:{ "日時":"8/11 (火) 夜公演", "場所":"Ravinia Festival, Highland Park", "料金":"芝生席（自由席）$110前後。公演1週間前に値上がりすることがある", "行き方":"Metra Union Pacific North線「Ravinia Park」駅。公演日のみ停車する専用駅" },
@@ -399,13 +448,13 @@ const WEEK = [
   ]},
 
   { day:"8/12", dow:"WED", items:[
-    { id:"8-12-grant-park-music-festival", resv:"free", art:"orchestra", cat:"music", time:"18:30", ja:"グラント・パーク音楽祭", en:"Grant Park Music Festival",
+    { place:"millennium", id:"8-12-grant-park-music-festival", resv:"free", art:"orchestra", cat:"music", time:"18:30", ja:"グラント・パーク音楽祭", en:"Grant Park Music Festival",
       what:"無料の野外クラシックコンサート", venue:"Jay Pritzker Pavilion, Millennium Park", price:"無料", dur:"約1.5時間",
       lead:"ミレニアム・パークの野外音楽堂で開かれる、全米で唯一の無料野外クラシック音楽祭。1935年から続くシカゴの夏の象徴で、専属のオーケストラと合唱団を持つ。今季は8/15で閉幕なので、残りは3公演のみ。",
       meta:{ "日時":"8/12 (水) 18:30–20:00", "残り公演":"8/12(水)・8/14(金)・8/15(土) の3回のみ", "場所":"Jay Pritzker Pavilion", "料金":"無料（芝生席・座席後方半分）／前方指定席のみ有料", "行き方":"CTA Red/Blue Line「Monroe」「Washington」、Metra「Millennium Station」" },
       tips:"無料席は先着順。人気公演は開演1時間前には芝生が埋まり始めるので早めに。ブランケットか折り畳み椅子を持参すれば、フランク・ゲーリー設計の音響システムで芝生の後方からでもしっかり聴こえる。",
       link:"https://www.grantparkmusicfestival.com/" },
-    { id:"8-12-j-cole", resv:"buy", art:"arena", cat:"music", time:"20:00", ja:"J. Cole（2日目）", en:"J. Cole — The Fall-Off Tour, Night 2",
+    { place:"unitedcenter", id:"8-12-j-cole", resv:"buy", art:"arena", cat:"music", time:"20:00", ja:"J. Cole（2日目）", en:"J. Cole — The Fall-Off Tour, Night 2",
       what:"ヒップホップ／前日に続く2公演目", venue:"United Center · 1901 W Madison St", price:"$93〜", dur:"約2.5時間",
       lead:"J. Cole「The Fall-Off Tour」のシカゴ2日目。初日（8/11）より価格帯は高めだが、初日が売り切れていてもこちらが残っていることがある。",
       meta:{ "日時":"8/12 (水) 20:00 開演", "場所":"United Center", "料金":"最安 $93前後〜", "行き方":"CTA #20 Madison バスが正面に停車。Blue Line「UIC–Halsted」から徒歩約20分" },
@@ -414,7 +463,7 @@ const WEEK = [
   ]},
 
   { day:"8/13", dow:"THU", items:[
-    { id:"8-13-willow-fest", resv:"free", art:"blues", cat:"music", time:"開幕", ja:"ウィロー・フェス 開幕", en:"Willow Fest — opening day",
+    { place:"willowsprings", id:"8-13-willow-fest", resv:"free", art:"blues", cat:"music", time:"開幕", ja:"ウィロー・フェス 開幕", en:"Willow Fest — opening day",
       what:"南西郊外の町祭り。8/16まで4日間", venue:"1 Village Circle, Willow Springs, IL", price:"一部有料", dur:"2〜3時間",
       lead:"シカゴ南西郊外ウィロースプリングスの町祭りが今日から4日間。カーニバルの乗り物、フードベンダー、ライブ音楽が並ぶ、いかにもアメリカの郊外の町祭りという雰囲気。週末（8/15・8/16）にはブルース・デイが組み込まれている。",
       meta:{ "日時":"8/13 (木)〜8/16 (日)。ブルースは 8/15・8/16", "場所":"1 Village Circle, Willow Springs, IL", "料金":"一部有料（公式サイトで要確認）", "行き方":"車で約40分。Metra Heritage Corridor線もあるが本数が少ない" },
@@ -423,19 +472,19 @@ const WEEK = [
   ]},
 
   { day:"8/14", dow:"FRI", items:[
-    { id:"8-14-chicago-air-and-water-show", resv:"free", art:"airshow", cat:"air", time:"日中", ja:"エア＆ウォーターショー リハーサル", en:"Chicago Air and Water Show — Practice Day",
+    { place:"northave", id:"8-14-chicago-air-and-water-show", resv:"free", art:"airshow", cat:"air", time:"日中", ja:"エア＆ウォーターショー リハーサル", en:"Chicago Air and Water Show — Practice Day",
       what:"本番とほぼ同内容を人混みなしで見られる穴場日", venue:"North Avenue Beach（Fullerton〜Oak St の湖岸）", price:"無料", dur:"2〜3時間",
       lead:"土日の本番に向けたリハーサル日。編隊飛行はほぼ本番と同じ内容が飛ぶのに、観客は本番の何分の一。混雑を避けたいならこの日が最良の選択肢。",
       meta:{ "日時":"8/14 (金) 日中（本番と同じ午前〜午後の時間帯）", "場所":"North Avenue Beach 周辺の湖岸", "料金":"無料", "行き方":"North Ave Beach に駐車場なし。CTA推奨（#151, #22 など湖岸方面バス）" },
       tips:"これが最大の穴場。平日なので有給が取れるなら断然こちらがおすすめ。ビーチの場所取りもほぼ不要で、直前に着いても見られる。ただしリハーサルなので、演目の順番や飛行時間は前後することがある。",
       link:"https://www.choosechicago.com/articles/festivals-special-events/chicago-air-water-show/" },
-    { id:"8-14-glenwood-avenue-arts-festival", resv:"free", art:"artsdistrict", cat:"art", time:"18:00–22:00", ja:"グレンウッド・アベニュー・アートフェス 初日", en:"Glenwood Avenue Arts Festival — 25th",
+    { place:"rogerspark", id:"8-14-glenwood-avenue-arts-festival", resv:"free", art:"artsdistrict", cat:"art", time:"18:00–22:00", ja:"グレンウッド・アベニュー・アートフェス 初日", en:"Glenwood Avenue Arts Festival — 25th",
       what:"街のアートフェス。25周年・アーティスト130組超", venue:"Morse Ave × Glenwood Ave, Rogers Park", price:"無料", dur:"2〜3時間",
       lead:"ロジャーズ・パークのアート地区で開かれる、今年で25周年のコミュニティフェス。金曜夜は夕方から夜だけの短い開催で、ライトアップされた高架下の雰囲気が一番いい時間帯。",
       meta:{ "日時":"8/14 (金) 18:00–22:00（土日も開催）", "場所":"Glenwood Avenue Arts District（Morse Ave と Glenwood Ave の交差点周辺）", "料金":"無料", "行き方":"CTA Red Line「Morse」駅を降りてすぐ。高架のすぐ下が会場" },
       tips:"金曜の夜だけ雰囲気が違い、地元の人がメインの落ち着いた空気。Red Line 一本で行けて駅を出たら会場、という気軽さが最大の強み。仕事帰りにそのまま寄れる。",
       link:"https://www.glenwoodave.org/" },
-    { id:"8-14-grant-park-music-festival", resv:"free", art:"orchestra", cat:"music", time:"18:30", ja:"グラント・パーク音楽祭", en:"Grant Park Music Festival",
+    { place:"millennium", id:"8-14-grant-park-music-festival", resv:"free", art:"orchestra", cat:"music", time:"18:30", ja:"グラント・パーク音楽祭", en:"Grant Park Music Festival",
       what:"無料の野外クラシックコンサート。残り2公演", venue:"Jay Pritzker Pavilion, Millennium Park", price:"無料", dur:"約1.5時間",
       lead:"今季の残り2公演のうちの1つ。金曜の夜は平日より人が多いので、いい場所を取るなら早めの到着を。",
       meta:{ "日時":"8/14 (金) 18:30–20:00", "場所":"Jay Pritzker Pavilion", "料金":"無料（芝生席・座席後方半分）", "行き方":"CTA Red/Blue Line「Monroe」「Washington」" },
@@ -444,37 +493,37 @@ const WEEK = [
   ]},
 
   { day:"8/15", dow:"SAT", items:[
-    { id:"8-15-chicago-air-and-water-show", resv:"free", art:"airshow", cat:"air", time:"10:30–15:00", ja:"シカゴ・エア＆ウォーターショー", en:"Chicago Air and Water Show", pick:true,
+    { place:"northave", id:"8-15-chicago-air-and-water-show", resv:"free", art:"airshow", cat:"air", time:"10:30–15:00", ja:"シカゴ・エア＆ウォーターショー", en:"Chicago Air and Water Show", pick:true,
       what:"戦闘機の編隊飛行ショー。全米最大級・完全無料", venue:"North Avenue Beach（Fullerton〜Oak St の湖岸）", price:"無料", dur:"2〜4時間",
       lead:"全米最大規模の無料エアショー。ブルーエンジェルスなどの編隊飛行がミシガン湖の上空を飛ぶ。湖岸のどこからでも無料で見られる、シカゴの夏で最大のイベント。",
       meta:{ "日時":"8/15 (土) 10:30–15:00", "場所":"North Avenue Beach が中心。Fullerton〜Oak St の湖岸なら広く見える", "料金":"無料", "行き方":"North Ave Beach に駐車場なし。CTA推奨（#151, #22 など湖岸方面バス）" },
       tips:"North Avenue Beach の中心部は午前中で埋まる。北の Fullerton 側や南の Oak Street Beach は比較的空いていて、同じ空が見える。日陰がないので日焼け止めと水は必須。混雑が苦手なら前日金曜のリハーサルへ。",
       link:"https://www.choosechicago.com/articles/festivals-special-events/chicago-air-water-show/" },
-    { id:"8-15-printer-s-row-art-fest", resv:"free", art:"artfair", cat:"art", time:"10:00〜", ja:"プリンターズ・ロウ・アートフェス", en:"Printer's Row Art Fest",
+    { place:"printersrow", id:"8-15-printer-s-row-art-fest", resv:"free", art:"artfair", cat:"art", time:"10:00〜", ja:"プリンターズ・ロウ・アートフェス", en:"Printer's Row Art Fest",
       what:"屋外アートフェア。全米から95組が出展", venue:"Dearborn St（Polk 〜 Harrison）", price:"無料", dur:"1〜2時間",
       lead:"かつて印刷業で栄えたプリンターズ・ロウ地区の通りを歩行者天国にして開かれるアートフェア。全米から審査を通過した95組のアーティストが出展する。",
       meta:{ "日時":"8/15 (土) 10:00〜（翌16日も開催）", "場所":"Dearborn Street の Polk〜Harrison 間", "料金":"入場無料", "行き方":"CTA Red Line「Harrison」駅、Metra「LaSalle Street Station」" },
       tips:"絵画、ストリートアート、ジュエリー、写真、彫刻、木工など幅広い。ダウンタウン南端なのでエアショーの後に湖岸から歩いて回るコースが組める。周辺のレストランやバーも通りに出店する。",
       link:"https://www.eventbrite.com/e/printers-row-art-fest-tickets-1991779050758" },
-    { id:"8-15-glenwood-avenue-arts-festival", resv:"free", art:"artsdistrict", cat:"art", time:"11:00–21:00", ja:"グレンウッド・アベニュー・アートフェス", en:"Glenwood Avenue Arts Festival — 25th",
+    { place:"rogerspark", id:"8-15-glenwood-avenue-arts-festival", resv:"free", art:"artsdistrict", cat:"art", time:"11:00–21:00", ja:"グレンウッド・アベニュー・アートフェス", en:"Glenwood Avenue Arts Festival — 25th",
       what:"街のアートフェス。この日が一番長時間・本番", venue:"Morse Ave × Glenwood Ave, Rogers Park", price:"無料", dur:"2〜3時間",
       lead:"3日間のうち最も長く開いている日。130組以上のアーティスト、20以上の音楽・ダンスパフォーマンス、オープンスタジオが集まる。",
       meta:{ "日時":"8/15 (土) 11:00–21:00", "場所":"Glenwood Avenue Arts District", "料金":"無料", "行き方":"CTA Red Line「Morse」駅を降りてすぐ" },
       tips:"アーティストのスタジオを直接開放する「オープンスタジオ」がこのフェスの特徴で、制作現場を覗ける。土曜は昼から夜までやっているので、午後に行って日が暮れるまでいるのがちょうどいい。キッズエリアもある。",
       link:"https://www.glenwoodave.org/" },
-    { id:"8-15-sangria-festival-chicago", resv:"free", art:"sangria", cat:"food", time:"12:00〜", ja:"サングリア・フェスティバル", en:"Sangria Festival Chicago",
+    { place:"humboldt", id:"8-15-sangria-festival-chicago", resv:"free", art:"sangria", cat:"food", time:"12:00〜", ja:"サングリア・フェスティバル", en:"Sangria Festival Chicago",
       what:"サングリア＆ラテン料理の屋外フード フェス", venue:"Humboldt Park · 2701 W Division St", price:"$10〜20", dur:"2〜3時間",
       lead:"プエルトリコ系コミュニティの中心地フンボルト・パークで開かれる、サングリアとラテン料理のフェス。生演奏とダンスもあり、屋外で一日中飲み食いする陽気なイベント。今年で9回目。",
       meta:{ "日時":"8/15 (土) 12:00〜（翌16日も開催）", "場所":"2701 W Division St, Humboldt Park", "料金":"寄付制 $10 目安（前売り $20〜の案内もあり）", "注意":"17歳以下は21歳以上の同伴が必要" },
       tips:"フンボルト・パークの Division Street はプエルトリコ料理の名店が集まるエリア。フェスのついでに周辺の店も回ると楽しい。ダウンタウンからは Blue Line「Division」駅からバス、または配車アプリが現実的。",
       link:"https://www.humboldtparkportal.org/event/sangria-festival/" },
-    { id:"8-15-willow-fest", resv:"free", art:"blues", cat:"music", time:"終日", ja:"ウィロー・フェス／ブルース・デイ", en:"Willow Fest — Blues Day",
+    { place:"willowsprings", id:"8-15-willow-fest", resv:"free", art:"blues", cat:"music", time:"終日", ja:"ウィロー・フェス／ブルース・デイ", en:"Willow Fest — Blues Day",
       what:"郊外の町祭りにブルースのライブが加わる日", venue:"1 Village Circle, Willow Springs, IL", price:"一部有料", dur:"2〜3時間",
       lead:"ウィロー・フェスの週末。Windy City Blues Society による「ブルース・デイ」がこの日と翌日に組み込まれ、シカゴが本場のブルースを郊外の町祭りの空気の中で聴ける。",
       meta:{ "日時":"8/15 (土)・8/16 (日)", "場所":"1 Village Circle, Willow Springs, IL", "料金":"一部有料（公式サイトで要確認）", "行き方":"車で約40分。Metra Heritage Corridor線もあるが本数が少ない" },
       tips:"カーニバルの乗り物やフードベンダーもある。シカゴ市内のフェスとは客層も空気感も違うので、「アメリカの地元のお祭り」を体験したいときに向いている。車があるなら行きやすい。",
       link:"https://windycityblues.org/willow-springs-blues-fest" },
-    { id:"8-15-grant-park-music-festival", resv:"free", art:"orchestra", cat:"music", time:"18:30", ja:"グラント・パーク音楽祭 今季最終公演", en:"Grant Park Music Festival — season finale", soon:true,
+    { place:"millennium", id:"8-15-grant-park-music-festival", resv:"free", art:"orchestra", cat:"music", time:"18:30", ja:"グラント・パーク音楽祭 今季最終公演", en:"Grant Park Music Festival — season finale", soon:true,
       what:"1935年から続く無料音楽祭の、今季ラスト", venue:"Jay Pritzker Pavilion, Millennium Park", price:"無料", dur:"約1.5時間",
       lead:"今シーズン最後の公演。来年6月まで開かれないので、今夏まだ一度も行っていないならこれが最後のチャンス。",
       meta:{ "日時":"8/15 (土) 18:30–20:00 ※今季最終公演", "場所":"Jay Pritzker Pavilion", "料金":"無料（芝生席・座席後方半分）／前方指定席のみ有料", "行き方":"CTA Red/Blue Line「Monroe」「Washington」" },
@@ -483,31 +532,31 @@ const WEEK = [
   ]},
 
   { day:"8/16", dow:"SUN", items:[
-    { id:"8-16-chicago-air-and-water-show", resv:"free", art:"airshow", cat:"air", time:"10:30–15:00", ja:"シカゴ・エア＆ウォーターショー 最終日", en:"Chicago Air and Water Show — final day",
+    { place:"northave", id:"8-16-chicago-air-and-water-show", resv:"free", art:"airshow", cat:"air", time:"10:30–15:00", ja:"シカゴ・エア＆ウォーターショー 最終日", en:"Chicago Air and Water Show — final day",
       what:"戦闘機の編隊飛行ショー。2日目・最終日", venue:"North Avenue Beach（Fullerton〜Oak St の湖岸）", price:"無料", dur:"2〜4時間",
       lead:"エア＆ウォーターショーの最終日。内容は土曜とほぼ同じで、日曜のほうがやや人出が落ち着くことが多い。",
       meta:{ "日時":"8/16 (日) 10:30–15:00 ※今年の最終日", "場所":"North Avenue Beach が中心", "料金":"無料", "行き方":"North Ave Beach に駐車場なし。CTA推奨（#151, #22 など湖岸方面バス）" },
       tips:"土曜に行きそびれてもこの日でリカバリーできる。終了後は湖岸沿いが一斉に帰宅ラッシュになるので、少し早めに切り上げるか、逆にビーチでゆっくりしてから動くのがラク。",
       link:"https://www.choosechicago.com/articles/festivals-special-events/chicago-air-water-show/" },
-    { id:"8-16-highwood-bloody-mary-fest", resv:"free", art:"bloodymary", cat:"food", time:"10:00–17:00", ja:"ブラッディ・マリー・フェス", en:"Highwood Bloody Mary Fest",
+    { place:"highwood", id:"8-16-highwood-bloody-mary-fest", resv:"free", art:"bloodymary", cat:"food", time:"10:00–17:00", ja:"ブラッディ・マリー・フェス", en:"Highwood Bloody Mary Fest",
       what:"ブラッディマリーの飲み比べ大会。16回目", venue:"Everts Park · 111 North Ave, Highwood, IL", price:"要確認", dur:"2〜3時間",
       lead:"シカゴ北郊ハイウッドで16年続くブラッディ・マリーの祭典。出店者が最高の一杯を競い、「Proud Mary Award」をかけて勝負する。日曜の昼から飲むのが正しい参加の仕方。",
       meta:{ "日時":"8/16 (日) 10:00–17:00", "場所":"Everts Park, 111 North Ave, Highwood, IL", "料金":"公式サイトに記載なし（要確認）", "行き方":"Metra Union Pacific North線「Highwood」駅。車なら約45分" },
       tips:"ハイウッドは Ravinia のすぐ隣町で、同じ Metra UP-N 線上。北郊外を一日楽しむプランが組める。飲むイベントなのでMetraで行くのが安全。",
       link:"https://www.celebratehighwood.org/bloody-mary-fest/" },
-    { id:"8-16-printer-s-row-art-fest", resv:"free", art:"artfair", cat:"art", time:"10:00〜", ja:"プリンターズ・ロウ・アートフェス 最終日", en:"Printer's Row Art Fest — final day",
+    { place:"printersrow", id:"8-16-printer-s-row-art-fest", resv:"free", art:"artfair", cat:"art", time:"10:00〜", ja:"プリンターズ・ロウ・アートフェス 最終日", en:"Printer's Row Art Fest — final day",
       what:"屋外アートフェアの2日目・最終日", venue:"Dearborn St（Polk 〜 Harrison）", price:"無料", dur:"1〜2時間",
       lead:"2日間開催の最終日。作品を買うつもりなら、最終日の午後は作家と値段の相談がしやすくなることもある。",
       meta:{ "日時":"8/16 (日) 10:00〜 ※最終日", "場所":"Dearborn Street の Polk〜Harrison 間", "料金":"入場無料", "行き方":"CTA Red Line「Harrison」駅、Metra「LaSalle Street Station」" },
       tips:"日曜の午後は撤収の準備を始める出店者も出てくるので、じっくり見るなら昼過ぎまでに。ダウンタウン南端なので、ループから歩いて行ける距離。",
       link:"https://www.eventbrite.com/e/printers-row-art-fest-tickets-1991779050758" },
-    { id:"8-16-glenwood-avenue-arts-festival", resv:"free", art:"artsdistrict", cat:"art", time:"11:00–19:00", ja:"グレンウッド・アベニュー・アートフェス 最終日", en:"Glenwood Avenue Arts Festival — final day",
+    { place:"rogerspark", id:"8-16-glenwood-avenue-arts-festival", resv:"free", art:"artsdistrict", cat:"art", time:"11:00–19:00", ja:"グレンウッド・アベニュー・アートフェス 最終日", en:"Glenwood Avenue Arts Festival — final day",
       what:"街のアートフェスの最終日", venue:"Morse Ave × Glenwood Ave, Rogers Park", price:"無料", dur:"2〜3時間",
       lead:"25周年フェスの最終日。土曜より2時間早く終わるので、行くなら早めの時間に。",
       meta:{ "日時":"8/16 (日) 11:00–19:00 ※最終日", "場所":"Glenwood Avenue Arts District", "料金":"無料", "行き方":"CTA Red Line「Morse」駅を降りてすぐ" },
       tips:"日曜は家族連れが多く、のんびりした空気。Red Line で北へ向かうので、エア＆ウォーターショーの帰りにそのまま北上して寄る、というルートも組める。",
       link:"https://www.glenwoodave.org/" },
-    { id:"8-16-sangria-festival-chicago", resv:"free", art:"sangria", cat:"food", time:"12:00〜", ja:"サングリア・フェスティバル 最終日", en:"Sangria Festival Chicago — final day",
+    { place:"humboldt", id:"8-16-sangria-festival-chicago", resv:"free", art:"sangria", cat:"food", time:"12:00〜", ja:"サングリア・フェスティバル 最終日", en:"Sangria Festival Chicago — final day",
       what:"サングリア＆ラテン料理フェスの最終日", venue:"Humboldt Park · 2701 W Division St", price:"$10〜20", dur:"2〜3時間",
       lead:"2日間開催の最終日。日曜の午後はライブとダンスが盛り上がる時間帯。",
       meta:{ "日時":"8/16 (日) 12:00〜 ※最終日", "場所":"2701 W Division St, Humboldt Park", "料金":"寄付制 $10 目安", "注意":"17歳以下は21歳以上の同伴が必要" },
@@ -517,35 +566,35 @@ const WEEK = [
 ];
 
 const NEXT = [
-  { id:"next-crosstown-classic", resv:"buy", art:"baseball", cat:"sports", time:"8/17–19", ja:"クロスタウン・クラシック（カブス vs ホワイトソックス）", en:"Crosstown Classic — Cubs vs White Sox at Wrigley Field", pick:true,
+  { place:"wrigley", id:"next-crosstown-classic", resv:"buy", art:"baseball", cat:"sports", time:"8/17–19", ja:"クロスタウン・クラシック（カブス vs ホワイトソックス）", en:"Crosstown Classic — Cubs vs White Sox at Wrigley Field", pick:true,
     what:"シカゴ2球団の直接対決。今季の最終シリーズ", venue:"Wrigley Field · 1060 W Addison St", price:"変動大", dur:"約3時間",
     lead:"シカゴの2つのMLB球団、ノースサイドのカブスとサウスサイドのホワイトソックスが年に数回だけ戦う「クロスタウン・クラシック」。今季後半戦は名物球場リグレー・フィールドで3連戦。通算成績はカブスの78勝77敗とほぼ互角で、街が二分される一週間になる。",
     meta:{ "日時":"8/17(月) 19:05 ／ 8/18(火) 19:05 ／ 8/19(水) 13:20", "場所":"Wrigley Field（1914年開場、MLBで2番目に古い球場）", "料金":"通常のカブス戦より高騰しやすい。早めの確保推奨", "行き方":"CTA Red Line「Addison」駅すぐ" },
     tips:"1914年開場のリグレー・フィールドは、ツタに覆われた外野フェンスと手動スコアボードで有名な、それ自体が観光地の球場。シカゴにいるうちに一度は行く価値がある。この対決は特に盛り上がるので、球場の雰囲気を味わうには最高の機会。水曜はデーゲームなので日中の観戦になる。",
     link:"https://www.mlb.com/cubs/schedule" },
 
-  { id:"next-millennium-park-summer-film-series", resv:"free", art:"cinema", cat:"art", time:"8/18 (火)", ja:"野外映画『Sinners』", en:"Millennium Park Summer Film Series — Sinners",
+  { place:"millennium", id:"next-millennium-park-summer-film-series", resv:"free", art:"cinema", cat:"art", time:"8/18 (火)", ja:"野外映画『Sinners』", en:"Millennium Park Summer Film Series — Sinners",
     what:"無料野外上映シリーズの今季最終回", venue:"Jay Pritzker Pavilion, Millennium Park", price:"無料", dur:"約2時間",
     lead:"ミレニアム・パークの無料野外映画シリーズ、今季の最終回。2025年の話題作『Sinners』を、摩天楼を背景にした芝生の上で観る。",
     meta:{ "日時":"8/18 (火) 18:30 開始 ※今季最終回", "場所":"Jay Pritzker Pavilion, Millennium Park", "料金":"無料・予約不要", "行き方":"CTA Red/Blue Line「Monroe」「Washington」" },
     tips:"シリーズ最終回なので例年より混む可能性が高い。食べ物・飲み物の持ち込みが可能なので、ダウンタウンで買って早めに場所を確保するのがおすすめ。日没後は湖からの風で冷えるので羽織るものを。",
     link:"https://www.chicago.gov/city/en/depts/dca/supp_info/millennium_park_film_series.html" },
 
-  { id:"next-ravinia-festival", resv:"buy", art:"ravinia", cat:"music", time:"8/20 (木)", ja:"Ravinia: リッキー・マーティン", en:"Ravinia Festival — Ricky Martin",
+  { place:"ravinia", id:"next-ravinia-festival", resv:"buy", art:"ravinia", cat:"music", time:"8/20 (木)", ja:"Ravinia: リッキー・マーティン", en:"Ravinia Festival — Ricky Martin",
     what:"ラテンポップの世界的スター。野外ピクニック鑑賞", venue:"Ravinia Festival · Highland Park（北郊）", price:"芝生 $110前後", dur:"約3時間 + 移動",
     lead:"「Livin' la Vida Loca」で世界的にブレイクしたプエルトリコ出身のラテンポップ・スター。ラヴィニアの芝生でピクニックしながら聴くには、これ以上ないくらい相性のいい夏向きのラインナップ。",
     meta:{ "日時":"8/20 (木) 夜公演", "場所":"Ravinia Festival, Highland Park", "料金":"芝生席 $110前後。公演1週間前に値上がりすることがある", "行き方":"Metra Union Pacific North線「Ravinia Park」駅（公演日のみ停車）" },
     tips:"人気公演なので芝生席も早めに押さえたい。値上がり前（公演1週間前まで）に買うのが得策なので、行くなら今週中に決めるのがいい。ブランケット・ローチェア・虫除けを持参。",
     link:"https://www.ravinia.org/events" },
 
-  { id:"next-lakeview-taco-fest", resv:"free", art:"sangria", cat:"food", time:"8/21–23", ja:"レイクビュー・タコフェス", en:"Lakeview Taco Fest",
+  { place:"southport", id:"next-lakeview-taco-fest", resv:"free", art:"sangria", cat:"food", time:"8/21–23", ja:"レイクビュー・タコフェス", en:"Lakeview Taco Fest",
     what:"タコス食べ比べ＋ルチャリブレ。13回目", venue:"3500 N Southport Ave（Southport Corridor）", price:"無料（寄付制）", dur:"2〜3時間",
     lead:"シカゴの人気店10軒以上が「最高のタコス」を競う3日間のフードフェス。ビールとタコスのペアリング、2つの音楽ステージ、そしてルチャリブレ（メキシカンプロレス）の実演まである。今年で13回目。",
     meta:{ "日時":"8/21(金) 16:00–22:00 ／ 8/22(土) 11:00–22:00 ／ 8/23(日) 11:00–21:00", "場所":"3500 N Southport Ave, Chicago", "料金":"入場無料（寄付制・地域団体への寄付になる）", "行き方":"CTA Brown Line「Southport」駅すぐ" },
     tips:"「ベストタコ」はその場でテキスト投票できる仕組みなので、食べ比べながら参加できる。Southport Corridor はもともとカフェや店が並ぶ歩きやすい通りで、フェスがなくても散歩に向いたエリア。ルチャリブレの時間帯は公式サイトで確認を。",
     link:"https://www.lakeviewroscoevillage.org/events-calendar/lakeview-taco-fest-2" },
 
-  { id:"next-bulls-fest-2026", resv:"reg", art:"basketball", cat:"sports", time:"8/22–23", ja:"ブルズ・フェス", en:"Bulls Fest 2026",
+  { place:"unitedcenter", id:"next-bulls-fest-2026", resv:"reg", art:"basketball", cat:"sports", time:"8/22–23", ja:"ブルズ・フェス", en:"Bulls Fest 2026",
     what:"シカゴ最大のバスケ祭り。入場無料", venue:"United Center キャンパス · 1901 W Madison St", price:"無料", dur:"2〜4時間",
     lead:"シカゴ・ブルズが主催する、街最大のバスケットボール・フェス。51面のコートを使った3on3トーナメントを中心に、ユースクリニック、現役選手・OBの登場、ファミリー向けアクティビティが2日間にわたって開かれる。今年で4回目。",
     meta:{ "日時":"8/22 (土)・8/23 (日)", "場所":"United Center キャンパス", "料金":"入場無料・全年齢対象", "出演":"ルーキーの Caleb Wilson、Dailyn Swain のほか、Nate Robinson、Metta World Peace らOBも登場", "行き方":"CTA #20 Madison バス。Blue Line「UIC–Halsted」から徒歩約20分" },
@@ -554,14 +603,14 @@ const NEXT = [
 ];
 
 const NOW = [
-  { id:"now-chicago-summerdance", resv:"free", art:"summerdance", cat:"dance", time:"〜8/29", ja:"シカゴ・サマーダンス", en:"Chicago SummerDance",
+  { place:"millennium", id:"now-chicago-summerdance", resv:"free", art:"summerdance", cat:"dance", time:"〜8/29", ja:"シカゴ・サマーダンス", en:"Chicago SummerDance",
     what:"無料のダンスレッスン＋生演奏。初心者・一人参加OK", venue:"Spirit of Music Garden (Grant Park) ほか市内各公園", price:"無料", dur:"約2時間",
     lead:"屋外ダンスフロアでプロの無料レッスンを受けてから、生演奏で実際に踊るという市主催のプログラム。サルサ、スイング、タンゴ、クンビアなど30以上のスタイルが日替わりで登場する。",
     meta:{ "日時":"7/15〜8/29", "場所":"Grant Park の Spirit of Music Garden ほか、市内各公園", "料金":"無料", "行き方":"Spirit of Music Garden は Grant Park内（601 S Michigan Ave 付近）" },
     tips:"毎回まずインストラクターによる初心者向けレッスンから始まるので、踊れなくても飛び込みで参加できる。ひとりで来ている人も多く、パートナー不要。日によって場所とダンススタイルが変わるので、事前に公式サイトで確認を。",
     link:"https://www.choosechicago.com/articles/festivals-special-events/chicago-summerdance/" },
 
-  { id:"now-ravinia-festival", resv:"buy", art:"ravinia", cat:"music", time:"〜9/19", ja:"ラヴィニア音楽祭 シーズン", en:"Ravinia Festival — 2026 season",
+  { place:"ravinia", id:"now-ravinia-festival", resv:"buy", art:"ravinia", cat:"music", time:"〜9/19", ja:"ラヴィニア音楽祭 シーズン", en:"Ravinia Festival — 2026 season",
     what:"北郊の野外音楽祭。9/19まで90公演以上", venue:"Ravinia Festival · Highland Park（北郊）", price:"芝生 $110前後", dur:"約3時間 + 移動",
     lead:"8/1から9/19まで続く、全米最古級の野外音楽フェス。ポール・サイモン、ミランダ・ランバート、リッキー・マーティンなど90公演以上が並ぶ。夏の間ずっと開いているので、好きなアーティストの日を選んで行ける。",
     meta:{ "日時":"8/1〜9/19（公演日は日によって異なる）", "場所":"Ravinia Festival, Highland Park", "料金":"芝生席 $110前後（公演による）", "行き方":"Metra Union Pacific North線「Ravinia Park」駅。公演日のみ停車" },
@@ -663,7 +712,7 @@ function mountDays(el, days) {
       ${d.today ? '<span class="day-today">今日</span>' : ""}
       <span class="day-count">${d.items.length}件</span>
     </div>`;
-    return head + d.items.map(it => { STORE.push(it); return rowHTML(it, STORE.length - 1); }).join("");
+    return head + d.items.map(it => { it._day = d.day; STORE.push(it); return rowHTML(it, STORE.length - 1); }).join("");
   }).join("");
 }
 mountDays(document.getElementById("week-list"), WEEK);
@@ -889,6 +938,117 @@ document.getElementById("d-cal").addEventListener("click", () => {
   a.download = current.id + ".ics";
   a.click();
   URL.revokeObjectURL(a.href);
+});
+
+/* ================= 会場マップ ================= */
+const PLACES = {
+  rogerspark:   { ja: "ロジャーズ・パーク", lat: 42.0080, lng: -87.6650 },
+  wrigley:      { ja: "リグレー・フィールド", lat: 41.9484, lng: -87.6553 },
+  southport:    { ja: "サウスポート通り", lat: 41.9460, lng: -87.6640 },
+  northave:     { ja: "ノース・アベニュー・ビーチ", lat: 41.9120, lng: -87.6280 },
+  humboldt:     { ja: "フンボルト・パーク", lat: 41.9030, lng: -87.6940 },
+  unitedcenter: { ja: "ユナイテッド・センター", lat: 41.8807, lng: -87.6742 },
+  millennium:   { ja: "ミレニアム／グラント・パーク", lat: 41.8826, lng: -87.6226 },
+  printersrow:  { ja: "プリンターズ・ロウ", lat: 41.8720, lng: -87.6290 },
+  ratefield:    { ja: "レート・フィールド", lat: 41.8299, lng: -87.6338 },
+  ravinia:      { ja: "ラヴィニア（ハイランドパーク）", suburb: "北郊 約40km" },
+  highwood:     { ja: "ハイウッド", suburb: "北郊 約45km" },
+  willowsprings:{ ja: "ウィロースプリングス", suburb: "南西郊 約30km" }
+};
+
+const MAPW = 300, MAPH = 430;
+const LNG0 = -87.760, LNG1 = -87.560, LAT0 = 41.800, LAT1 = 42.035;
+const px = (lng) => (lng - LNG0) / (LNG1 - LNG0) * MAPW;
+const py = (lat) => (LAT1 - lat) / (LAT1 - LAT0) * MAPH;
+
+/* 場所ごとにイベントを集計（TRIPSは対象外） */
+const byPlace = {};
+STORE.forEach((e, i) => { if (e.place) (byPlace[e.place] ||= []).push(i); });
+
+const cityKeys   = Object.keys(PLACES).filter(k => !PLACES[k].suburb && byPlace[k]);
+const suburbKeys = Object.keys(PLACES).filter(k =>  PLACES[k].suburb && byPlace[k]);
+const numOf = {};
+[...cityKeys, ...suburbKeys].forEach((k, i) => numOf[k] = i + 1);
+
+/* --- SVG --- */
+const shore = `M 158 -6 C 178 66, 197 158, 207 216 C 215 254, 226 272, 232 302 C 238 342, 241 394, 244 436`;
+const pins = cityKeys.map(k => {
+  const p = PLACES[k], x = px(p.lng), y = py(p.lat);
+  return `<g class="pin" data-place="${k}" tabindex="0" role="button" aria-label="${esc(p.ja)}">
+    <circle class="pin-ring" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="13" fill="none" stroke="var(--flag-red)" stroke-width="1.5"/>
+    <circle class="pin-dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="8" fill="var(--accent)"/>
+    <text class="pin-n" x="${x.toFixed(1)}" y="${(y + 2.9).toFixed(1)}" text-anchor="middle">${numOf[k]}</text>
+  </g>`;
+}).join("");
+
+document.getElementById("map-pane").innerHTML = `
+<svg viewBox="0 0 ${MAPW} ${MAPH}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="シカゴの会場マップ">
+  <defs><clipPath id="landclip"><rect width="${MAPW}" height="${MAPH}"/></clipPath></defs>
+  <g clip-path="url(#landclip)">
+    <g stroke="#CBD9E2" stroke-width=".6" opacity=".75">
+      ${[40,80,120,160,200,240,280].map(x=>`<path d="M${x} 0 V${MAPH}"/>`).join("")}
+      ${[50,100,150,200,250,300,350,400].map(y=>`<path d="M0 ${y} H${MAPW}"/>`).join("")}
+    </g>
+    <path d="${shore} L ${MAPW} ${MAPH} L ${MAPW} 0 Z" fill="#9FC2DA"/>
+    <path d="${shore}" fill="none" stroke="#5E88A8" stroke-width="1.6"/>
+    <path d="M 231 268 C 200 264, 176 258, 150 256 M 150 256 C 132 250, 120 232, 104 214 M 150 256 C 134 268, 122 292, 112 318"
+          fill="none" stroke="#9FC2DA" stroke-width="3.4" stroke-linecap="round"/>
+    <rect x="197" y="260" width="30" height="30" fill="none" stroke="#5E88A8" stroke-width="1.3" stroke-dasharray="3 2"/>
+    <text x="190" y="252" text-anchor="end" class="pin-label" style="letter-spacing:.12em">THE LOOP</text>
+    <text x="272" y="120" text-anchor="middle" class="pin-label" style="font-size:10px;fill:#4E7B99;letter-spacing:.14em" transform="rotate(90 272 120)">LAKE MICHIGAN</text>
+    <text x="14" y="24" class="pin-label" style="letter-spacing:.14em">N ↑</text>
+    ${pins}
+  </g>
+</svg>`;
+
+/* --- 一覧 --- */
+document.getElementById("place-list").innerHTML =
+  [...cityKeys, ...suburbKeys].map(k => {
+    const p = PLACES[k];
+    return `<button class="place-row${p.suburb ? " is-suburb" : ""}" type="button" data-place="${k}">
+      <span class="place-num">${numOf[k]}</span>
+      <span class="place-ja">${esc(p.ja)}${p.suburb ? ` <span class="place-cnt">${esc(p.suburb)}</span>` : ""}</span>
+      <span class="place-cnt">${byPlace[k].length}件</span>
+    </button>`;
+  }).join("");
+
+/* --- 選択 --- */
+function selectPlace(k) {
+  document.querySelectorAll(".pin, .place-row").forEach(el =>
+    el.classList.toggle("is-active", el.dataset.place === k));
+  const box = document.getElementById("map-events");
+  document.getElementById("map-ev-title").textContent =
+    PLACES[k].ja + (PLACES[k].suburb ? `（${PLACES[k].suburb}）` : "");
+  document.getElementById("map-ev-list").innerHTML = byPlace[k].map(i => {
+    const e = STORE[i];
+    const when = e._day ? `${e._day} ${e.time}` : e.time;
+    return `<button class="map-ev" type="button" data-open="${i}"><span class="mev-t">${esc(when)}</span>${esc(e.ja)}</button>`;
+  }).join("");
+  box.hidden = false;
+}
+document.addEventListener("click", (ev) => {
+  const hit = ev.target.closest("[data-place]");
+  if (hit) { selectPlace(hit.dataset.place); return; }
+  const o = ev.target.closest("[data-open]");
+  if (o) open(Number(o.dataset.open));
+});
+document.getElementById("map-pane").addEventListener("keydown", (ev) => {
+  if (ev.key !== "Enter" && ev.key !== " ") return;
+  const pin = ev.target.closest(".pin");
+  if (pin) { ev.preventDefault(); selectPlace(pin.dataset.place); }
+});
+
+/* イベント行にホバーすると、その会場のピンが光る */
+document.querySelectorAll(".row-wrap").forEach(w => {
+  const i = Number(w.querySelector("button.row").dataset.i);
+  const k = STORE[i] && STORE[i].place;
+  if (!k) return;
+  const hl = (on) => {
+    const pin = document.querySelector(`.pin[data-place="${k}"]`);
+    if (pin) pin.classList.toggle("is-active", on);
+  };
+  w.addEventListener("mouseenter", () => hl(true));
+  w.addEventListener("mouseleave", () => hl(false));
 });
 
 loadRsvps();
