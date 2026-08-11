@@ -205,10 +205,13 @@
   .map-side .place-list { flex: 1; }
   @media (max-width: 780px) { .map-wrap { grid-template-columns: 1fr; } }
   .map-pane { position: relative; min-height: 460px; background: linear-gradient(170deg, #F2F6F8 0%, #E8EFF3 100%); border-right: 1px solid var(--line); }
-  @media (max-width: 780px) {
-    .map-pane { border-right: none; border-bottom: 1px solid var(--line); min-height: 0; aspect-ratio: 300 / 430; }
-  }
   .map-pane svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+  @media (max-width: 780px) {
+    /* 狭い画面ではSVGを通常配置に戻し、viewBox の比率から高さが決まるようにする
+       （aspect-ratio 頼みだと、未対応環境で高さが0になり地図が消えるため） */
+    .map-pane { border-right: none; border-bottom: 1px solid var(--line); min-height: 0; }
+    .map-pane svg { position: static; width: 100%; height: auto; }
+  }
   .pin { cursor: pointer; }
   .pin-dot { transition: r .15s ease, fill .15s ease; }
   .pin:hover .pin-dot, .pin.is-active .pin-dot { fill: var(--flag-red); }
