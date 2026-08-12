@@ -267,6 +267,29 @@
   .day-head .day-count { margin-left: 12px; }
   .wx-warn { font-family: var(--font-mono); font-size: 10.5px; background: var(--warn-soft); color: var(--warn); padding: 2px 7px; }
 
+  /* ---------- 時間別天気 ---------- */
+  .wx-hours-wrap { border: 1px solid var(--line); background: var(--surface); padding: 9px 12px 10px; }
+  .masthead .wx-hours-wrap { margin-top: 12px; border-color: rgba(255,255,255,.16); box-shadow: 0 14px 34px rgba(8,20,33,.3); }
+  .wx-hours-head { display: flex; align-items: baseline; gap: 9px; margin-bottom: 7px; }
+  .wx-hours-head b { font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: .04em; }
+  .wx-hours-head span { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
+  .wx-hours { display: flex; gap: 1px; overflow-x: auto; scrollbar-width: thin; }
+  .wx-h { flex: 0 0 auto; min-width: 50px; text-align: center; padding: 5px 3px 4px; }
+  .wx-h.is-now { background: var(--accent-soft); box-shadow: inset 0 -2px 0 var(--accent); }
+  .wx-h .h { display: block; font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-faint); }
+  .wx-h.is-now .h { color: var(--accent); font-weight: 700; }
+  .wx-h svg { width: 20px; height: 20px; margin: 1px 0; }
+  .wx-h .t { display: block; font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .wx-h .p { display: block; font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); opacity: .35; }
+  .wx-h .p.on { color: var(--accent); opacity: 1; font-weight: 700; }
+  button.day-wx { appearance: none; border: none; background: none; font: inherit; cursor: pointer; padding: 2px 4px; }
+  button.day-wx:hover { background: var(--accent-soft); }
+  button.day-wx .caret { font-size: 9px; opacity: .5; }
+  .d-wx { display: flex; align-items: center; gap: 9px; margin-top: 14px; border: 1px solid var(--line); background: var(--surface-2); padding: 9px 12px; }
+  .d-wx svg { width: 26px; height: 26px; flex-shrink: 0; }
+  .d-wx .lbl { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; color: var(--ink-faint); display: block; }
+  .d-wx .val { font-size: 14.5px; }
+
   /* ---------- skyline ---------- */
   .skyline { display: block; width: 100%; height: auto; margin-top: 14px; }
 
@@ -490,6 +513,8 @@
       <div class="stat"><span class="stat-num" id="n-trip">—</span><span class="stat-label">週末旅行</span></div>
     </div>
 
+    <div class="wx-hours-wrap" id="wx-today" hidden></div>
+
     <div class="legend">
       <span class="legend-t">凡例</span>
       <span class="legend-i"><span class="pick"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1l2 4.6 5 .4-3.8 3.3 1.2 4.9L8 11.6 3.6 14.2l1.2-4.9L1 6l5-.4z"/></svg>目玉</span>特におすすめ・その週の一番</span>
@@ -656,6 +681,7 @@
       <h2 id="d-title"></h2>
       <div class="d-en" id="d-en"></div>
       <div class="d-headline" id="d-headline"></div>
+      <div class="d-wx" id="d-wx" hidden></div>
       <p class="d-lead" id="d-lead"></p>
       <dl class="d-meta" id="d-meta"></dl>
       <div class="d-tips"><h3>現地のコツ</h3><p id="d-tips"></p></div>
@@ -1027,6 +1053,25 @@ function open(i) {
   document.getElementById("d-lead").textContent = e.lead;
   document.getElementById("d-meta").innerHTML =
     Object.entries(e.meta).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+  /* 開始時刻の天気（日付と時刻が分かるイベントのみ） */
+  {
+    const box = document.getElementById("d-wx");
+    const HRS = window.__wxHours;
+    const hm = String(e.time || "").match(/(\d{1,2}):(\d{2})/);
+    const day = HRS && e.date && HRS[e.date];
+    if (day) {
+      const h = hm ? +hm[1] : 12;
+      const v = day[h] || day[Math.min(23, Math.max(6, h))];
+      if (v) {
+        const [ic, lb] = wxOf(v.code);
+        box.innerHTML = `${wxSVG(ic, "")}<div>
+          <span class="lbl">${hm ? `${h}時ごろの天気` : "この日の日中の天気"}</span>
+          <span class="val">${lb} ${v.t}°C${v.p >= 30 ? ` · <b style="color:var(--accent)">降水${v.p}%</b>` : ` · 降水${v.p}%`}</span>
+        </div>`;
+        box.hidden = false;
+      } else box.hidden = true;
+    } else box.hidden = true;
+  }
   document.getElementById("d-tips").textContent = e.tips;
   document.getElementById("d-link").href = e.link || "#";
   document.getElementById("d-link").style.display = (e.link && e.link !== "#") ? "" : "none";
@@ -1214,6 +1259,8 @@ function applyFilters() {
       el = el.nextElementSibling;
     }
     h.style.display = n ? "" : "none";
+    const hx = h.nextElementSibling;
+    if (hx && hx.classList.contains("wx-hours-wrap")) hx.style.display = n ? "" : "none";
     const c = h.querySelector(".day-count");
     if (c) c.textContent = n + "件";
   });
@@ -1424,6 +1471,7 @@ const wxSVG = (body, cls) => `<svg class="${cls}" viewBox="0 0 24 24" xmlns="htt
 async function loadWeather() {
   const url = "https://api.open-meteo.com/v1/forecast?latitude=41.8781&longitude=-87.6298"
     + "&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+    + "&hourly=temperature_2m,precipitation_probability,weather_code"
     + "&timezone=America%2FChicago&forecast_days=10";
   let d;
   try {
@@ -1472,8 +1520,83 @@ async function loadWeather() {
     h.insertBefore(el, h.querySelector(".day-count"));
   });
 
-  /* 屋外イベントの詳細に、雨の可能性が高い日は注意を出す */
-  window.__wxByDate = fc;
+  /* ---------- 時間別 ---------- */
+  const HRS = {};                       // { "2026-08-12": { 18: {t, p, code}, ... } }
+  (d.hourly?.time || []).forEach((t, i) => {
+    const [day, hm] = t.split("T");
+    (HRS[day] ||= {})[+hm.slice(0, 2)] = {
+      t: Math.round(d.hourly.temperature_2m[i]),
+      p: d.hourly.precipitation_probability[i],
+      code: d.hourly.weather_code[i]
+    };
+  });
+  window.__wxHours = HRS;
+
+  const nowHour = +new Date().toLocaleString("en-US", { timeZone: "America/Chicago", hour: "2-digit", hour12: false });
+
+  /* 6時〜23時の帯を作る。today なら現在時刻をハイライト */
+  function hoursHTML(dayISO, isToday) {
+    const day = HRS[dayISO];
+    if (!day) return "";
+    let cells = "";
+    for (let h = 6; h <= 23; h++) {
+      const v = day[h];
+      if (!v) continue;
+      const [ic] = wxOf(v.code);
+      cells += `<div class="wx-h${isToday && h === nowHour ? " is-now" : ""}">
+        <span class="h">${isToday && h === nowHour ? "今" : h + "時"}</span>
+        ${wxSVG(ic, "")}
+        <span class="t">${v.t}°</span>
+        <span class="p${v.p >= 30 ? " on" : ""}">${v.p}%</span>
+      </div>`;
+    }
+    return cells ? `<div class="wx-hours">${cells}</div>` : "";
+  }
+
+  /* 今日の帯をヘッダーに */
+  const todayISO = isoOf(chicagoToday());
+  const todayCells = hoursHTML(todayISO, true);
+  if (todayCells) {
+    const box = document.getElementById("wx-today");
+    box.innerHTML = `<div class="wx-hours-head"><b>今日の時間別</b><span>予定の時間の天気を確認できます</span></div>` + todayCells;
+    box.hidden = false;
+    const now = box.querySelector(".is-now");
+    if (now) box.querySelector(".wx-hours").scrollLeft = Math.max(0, now.offsetLeft - 60);
+  }
+
+  /* 各日の見出しの天気を押すと、その日の時間別を開く */
+  document.querySelectorAll("#week-list .day-head").forEach(h => {
+    const wx = h.querySelector(".day-wx");
+    if (!wx) return;
+    const md = h.querySelector(".day-date").textContent.split("/");
+    const key = `${YEAR}-${pad(+md[0])}-${pad(+md[1])}`;
+    if (!HRS[key]) return;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = wx.className;
+    btn.innerHTML = wx.innerHTML + '<span class="caret">▼</span>';
+    btn.setAttribute("aria-expanded", "false");
+    btn.title = "押すと時間ごとの天気が開きます";
+    wx.replaceWith(btn);
+
+    btn.addEventListener("click", () => {
+      const open = btn.getAttribute("aria-expanded") === "true";
+      const next = h.nextElementSibling;
+      if (open) {
+        if (next && next.classList.contains("wx-hours-wrap")) next.remove();
+        btn.setAttribute("aria-expanded", "false");
+        btn.querySelector(".caret").textContent = "▼";
+      } else {
+        const row = document.createElement("div");
+        row.className = "wx-hours-wrap";
+        row.innerHTML = `<div class="wx-hours-head"><b>${md[0]}/${md[1]} の時間別</b><span>降水確率30%以上は青字</span></div>` + hoursHTML(key, key === todayISO);
+        h.after(row);
+        btn.setAttribute("aria-expanded", "true");
+        btn.querySelector(".caret").textContent = "▲";
+      }
+    });
+  });
 }
   document.getElementById("copy-link").addEventListener("click", async (ev) => {
   const url = "https://chicago-dashboard.vercel.app/";
